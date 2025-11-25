@@ -1,0 +1,122 @@
+﻿@page "/tasks"
+@inject Database Db
+
+<h1>Список задач</h1>
+
+@if (Tasks_ == null)
+{
+    <p>Загрузка...</p>
+}
+else if (Tasks_.Count == 0)
+{
+    <p>Задачи отсутствуют.</p>
+}
+else
+{
+    <table class="x-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Название</th>
+                <th>Условие</th>
+                <th>Идея решения</th>
+                <th>Polygon URL</th>
+                <th>CF</th>
+                <th>Yandex</th>
+                <th>Сложность</th>
+                <th>Заметки</th>
+                <th>Тег</th>
+                <th>Контекст</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var t in Tasks_)
+            {
+                <tr>
+                    <td>@t.IdTask</td>
+                    <td>@t.Name</td>
+                    <td>@t.Statement</td>
+                    <td>@t.SolutionIdea</td>
+                    <td>@t.PolygonUrl</td>
+                    <td>@t.IsPreparedCF</td>
+                    <td>@t.IsPreparedYandex</td>
+                    <td>@t.Difficulty</td>
+                    <td>@t.Notes</td>
+                    <td>@t.IdTag</td>
+                    <td>@t.IdContext</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TaskItem>? Tasks_;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTasksAsync();
+    }
+
+    private async Task LoadTasksAsync()
+    {
+        Tasks_ = new();
+
+        using var conn = Db.GetConnection();
+        await conn.OpenAsync();
+
+        string sql = @"
+            SELECT
+                id_task,
+                name,
+                statement,
+                solution_idea,
+                polygon_url,
+                is_prepared_for_codeforces,
+                is_prepared_for_yandex,
+                difficulty,
+                notes,
+                id_tag,
+                id_context
+            FROM tasks
+            ORDER BY id_task;
+        ";
+
+        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            Tasks_.Add(new TaskItem
+                {
+                    IdTask = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    Statement = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    SolutionIdea = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    PolygonUrl = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    IsPreparedCF = reader.IsDBNull(5) ? false : reader.GetBoolean(5),
+                    IsPreparedYandex = reader.IsDBNull(6) ? false : reader.GetBoolean(6),
+                    Difficulty = reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                    Notes = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                    IdTag = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
+                    IdContext = reader.IsDBNull(10) ? 0 : reader.GetInt32(10)
+                });
+        }
+    }
+
+    public class TaskItem
+    {
+        public int IdTask { get; set; }
+        public string Name { get; set; } = "";
+        public string Statement { get; set; } = "";
+        public string SolutionIdea { get; set; } = "";
+        public string PolygonUrl { get; set; } = "";
+        public bool IsPreparedCF { get; set; }
+        public bool IsPreparedYandex { get; set; }
+        public int? Difficulty { get; set; }
+        public string Notes { get; set; } = "";
+        public int IdTag { get; set; }
+        public int IdContext { get; set; }
+    }
+}

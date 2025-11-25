@@ -1,0 +1,64 @@
+﻿@page "/login"
+@inject Database Db
+@inject AdminSession AdminState
+@inject NavigationManager NavigationManager
+
+<div class="login-page-container">
+    <div class="login-form">
+        <h2 style="text-align:center; margin-bottom:10px;">Вход администратора</h2>
+
+        <label>Логин</label>
+        <input type="text" @bind="Username" />
+
+        <label>Пароль</label>
+        <input type="password" @bind="Password" />
+
+        <button @onclick="Login_">Войти</button>
+
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <p style="color:red; text-align:center; margin-top:10px;">@Error</p>
+        }
+    </div>
+</div>
+
+@code {
+    private string Username = "";
+    private string Password = "";
+    private string Error = "";
+
+    private async Task Login_()
+    {
+        string hash = ComputeSha256(Password);
+
+        using var conn = Db.GetConnection();
+        await conn.OpenAsync();
+
+        string sql = "SELECT id FROM users WHERE username = @u AND password_hash = @p LIMIT 1";
+
+        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@u", Username);
+        cmd.Parameters.AddWithValue("@p", hash);
+
+        var result = await cmd.ExecuteScalarAsync();
+
+        if (result != null)
+        {
+            Error = "";
+            AdminState.LoginAdmin();
+            NavigationManager.NavigateTo("/admin");
+        }
+        else
+        {
+            Error = "Неверный логин или пароль.";
+        }
+    }
+
+    private string ComputeSha256(string raw)
+    {
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(raw);
+        var hash = sha.ComputeHash(bytes);
+        return BitConverter.ToString(hash).Replace("-", "").ToLower();
+    }
+}

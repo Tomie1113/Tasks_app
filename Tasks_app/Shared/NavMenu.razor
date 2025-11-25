@@ -1,0 +1,42 @@
+﻿<div class="nav-menu-root">
+
+    <div class="nav-wrapper">
+
+        <div class="nav-panel">
+            <div class="nav-left">
+                <img src="favicon.png" class="nav-logo" />
+                <span class="nav-title">КонТест</span>
+            </div>
+
+            <div class="nav-links">
+                <div class="desktop-only">
+                    <NavLink href="/" Match="NavLinkMatch.All">Главная</NavLink>
+                    <NavLink href="/tasks">Задачи</NavLink>
+                    <NavLink href="/tags">Теги</NavLink>
+                    <NavLink href="/contests">Контесты</NavLink>
+                    <NavLink href="/reports">Отчёты</NavLink>
+                    <NavLink href="/login">Админ</NavLink>
+                </div>
+
+                <button class="mobile-only hamburger" @onclick="ToggleMenu">☰</button>
+            </div>
+        </div>
+
+        <!-- ❗ Вот ЭТО — мобильное меню, которого у тебя НЕ было -->
+        <div class="mobile-menu @(menuOpen ? "open" : "")">
+            <NavLink href="/" Match="NavLinkMatch.All">Главная</NavLink>
+            <NavLink href="/tasks">Задачи</NavLink>
+            <NavLink href="/tags">Теги</NavLink>
+            <NavLink href="/contests">Контесты</NavLink>
+            <NavLink href="/reports">Отчёты</NavLink>
+            <NavLink href="/login">Админ</NavLink>
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+    bool menuOpen = false;
+    void ToggleMenu() => menuOpen = !menuOpen;
+}

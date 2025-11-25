@@ -1,0 +1,525 @@
+﻿/* ===== RAYCAST DESIGN TOKENS ===== */
+
+:root {
+    --grey-50: #e6e6e6;
+    --grey-100: #cdcece;
+    --grey-200: #9c9c9d;
+    --grey-300: #6a6b6c;
+    --grey-400: #434345;
+    --grey-500: #2f3031;
+    --grey-600: #1b1c1e;
+    --grey-700: #111214;
+    --grey-800: #0c0d0f;
+    --grey-900: #07080a;
+    --background: var(--grey-900);
+    --surface: rgba(255,255,255,0.04);
+    --surface-hover: rgba(255,255,255,0.08);
+    --surface-border: rgba(255,255,255,0.06);
+    --r-sm: 6px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-xl: 20px;
+    --spacing-1: 8px;
+    --spacing-2: 16px;
+    --spacing-3: 24px;
+    --spacing-4: 32px;
+    --spacing-5: 40px;
+    --font-main: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --ease-1: cubic-bezier(0.2, 0, 0.2, 1);
+}
+
+/* ===== GLOBAL ===== */
+
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--background);
+    color: var(--grey-50);
+    font-family: var(--font-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+.fade-in {
+    animation: fadeIn 0.35s var(--ease-1) forwards;
+}
+
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== TOP NAVIGATION (STATIC LAYOUT, без адаптивов) ===== */
+
+.nav-wrapper {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 8%;
+    padding: var(--spacing-2) 24px;
+    display: flex;
+    justify-content: center;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.nav-panel {
+    width: 100%;
+/*    max-width: 1280px;*/
+    min-height: 58px;
+    padding: 0 28px;
+    border-radius: var(--r-lg);
+    background: rgba(18, 18, 23, 0.72);
+    border: 1px solid var(--surface-border);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-sm);
+}
+
+.nav-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--grey-50);
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+}
+
+    .nav-links a {
+        color: var(--grey-200);
+        font-size: 24px;
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: var(--r-md);
+        transition: 0.25s var(--ease-1);
+    }
+
+        .nav-links a:hover {
+            background: rgba(255,255,255,0.07);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .nav-links a.active {
+            background: var(--surface-hover);
+            border: 1px solid var(--surface-border);
+            color: #fff;
+        }
+.nav-title {
+    white-space: nowrap;
+    padding-right: 12px; /* отступ только справа */
+    display: inline-block; /* чтобы padding работал стабильно */
+    font-size: 34px; /* ← увеличенный шрифт */
+    font-weight: 800; /* жирность можно оставить прежней */
+}
+
+/* ===== CONTENT ===== */
+
+.content {
+    padding-top: calc(var(--spacing-5) + 58px);
+    padding-left: 40px;
+    padding-right: 40px;
+    animation: fadeIn 0.5s var(--ease-1) forwards;
+}
+
+/* ===== CARDS ===== */
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--spacing-4);
+}
+
+.card {
+    padding: 26px;
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    backdrop-filter: blur(12px);
+    transition: 0.25s var(--ease-1);
+}
+
+    .card:hover {
+        background: var(--surface-hover);
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+    }
+
+.card-title {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.card-desc {
+    font-size: 14px;
+    color: var(--grey-200);
+}
+
+/* ===== FORMS ===== */
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--surface-border);
+    color: #fff;
+    border-radius: var(--r-md);
+    font-size: 15px;
+    transition: 0.2s var(--ease-1);
+}
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        outline: none;
+        border-color: var(--grey-200);
+        background: rgba(255,255,255,0.08);
+    }
+
+button {
+    padding: 12px 22px;
+    border-radius: var(--r-md);
+    border: none;
+    background: linear-gradient(90deg, #4f46e5, #6d5dfc);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s var(--ease-1);
+}
+
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(79,70,229,0.35);
+    }
+
+
+/* ============================
+   ADAPTIVE NAV MENU 
+   ============================ */
+
+/* По умолчанию — десктоп:
+   desktop-only видно
+   mobile-only и mobile-menu скрыты
+*/
+.desktop-only {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 28px;
+}
+
+.mobile-only {
+    display: none;
+}
+
+.mobile-menu {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: rgba(0,0,0,0.9);
+    padding: 16px;
+    border-radius: var(--r-md);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+    .mobile-menu a {
+        display: block;
+        padding: 10px 14px;
+        color: var(--grey-100);
+        text-decoration: none;
+        border-radius: var(--r-md);
+    }
+
+        .mobile-menu a:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+/* ------------------------------
+   Мобильный режим (< 768px)
+   ------------------------------ */
+@media (max-width: 768px) {
+
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: block !important;
+    }
+
+    /* Выпадающее меню */
+    .mobile-menu.open {
+        display: block !important;
+    }
+}
+
+/* HERO */
+.x-hero {
+    padding: 30px 25px 60px;
+    text-align: center;
+    /* Flex layout to stack hero text and illustration vertically */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Reduce vertical padding on the hero section to give it less height */
+/*    padding-top: 20px;*/
+    padding-bottom: 20px;
+}
+
+/* Decorative illustration under the hero text */
+.hero-illustration {
+    margin-top: 20px;
+    width: 100%;
+    max-width: 1200px;
+    height: auto;
+    border-radius: 24px;
+}
+/* Gradient wrapper for the features section inspired by Yandex Contest styling */
+.x-features-section {
+    background: linear-gradient(145deg, #5a6bfc 0%, #8540f5 35%, #e367bc 70%, #f3987e 100%);
+    padding: 60px 40px;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+    /* Light text color for the section heading on the gradient background */
+    .x-features-section .x-sec-title {
+        color: #ffffff;
+    }
+
+    /* Dark translucent cards on top of gradient background */
+    .x-features-section .x-feature {
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+.x-hero-title {
+    margin-top: 20px;
+    font-size: 80px;
+    font-weight: 900;
+    background: linear-gradient(90deg,#9f7cff,#4eafff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 30px;
+}
+
+.x-hero-sub {
+    margin-top: 0px;
+    font-size: 26px;
+    color: var(--grey-300);
+}
+
+/* SECTION */
+.x-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 25px 60px;
+}
+
+.x-sec-title {
+    font-size: 34px;
+    margin-bottom: 35px;
+    text-align: center;
+    font-weight: 700;
+}
+
+/* FEATURES GRID */
+.x-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+    gap: 28px;
+}
+
+.x-feature {
+    background: rgba(255,255,255,0.04);
+    border-radius: 18px;
+    padding: 26px;
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(14px);
+    /* Staggered slide‑up effect for feature cards */
+    transition: opacity .6s ease, transform .6s ease;
+    transform: translateY(60px);
+    opacity: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+}
+
+    .x-feature:hover {
+        transform: translateY(-6px) scale(1.02);
+        background: rgba(255,255,255,0.07);
+        box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+.x-ico {
+    font-size: 46px;
+    margin-bottom: 12px;
+}
+
+/* NAV GRID */
+.x-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+    gap: 28px;
+}
+
+.x-nav {
+    display: block;
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 26px;
+    border: 1px solid var(--surface-border);
+    position: relative;
+    overflow: hidden;
+    transition: .3s;
+    transform: translateY(30px);
+    opacity: 0;
+}
+
+    .x-nav:hover {
+        background: var(--surface-hover);
+        transform: translateY(-6px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+.x-nav-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.x-nav-tip {
+    opacity: 0;
+    transform: translateX(8px);
+    font-size: 14px;
+    color: var(--grey-300);
+    transition: .2s;
+}
+
+.x-nav:hover .x-nav-tip {
+    opacity: 1;
+    transform: translateX(0);
+}
+/* фикс: отключаем конфликт fade-in */
+.observe.fade-in {
+    animation: none !important;
+}
+
+/* scroll анимации */
+.observe {
+    opacity: 0 !important;
+    transform: translateY(40px) !important;
+    transition: opacity .6s ease, transform .6s ease;
+}
+
+    .observe.visible {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+    }
+
+/* ===== КНОПКИ НАВИГАЦИИ ===== */
+
+.x-nav-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 26px;
+    height: 140px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    backdrop-filter: blur(12px);
+    text-decoration: none;
+    transition: .25s var(--ease-1);
+    position: relative;
+    opacity: 0;
+    transform: translateY(40px);
+}
+
+    .x-nav-btn:hover {
+        background: rgba(255,255,255,0.10);
+        border-color: rgba(255,255,255,0.2);
+        transform: translateY(-6px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+    }
+
+.x-nav-btn-title {
+    font-size: 30px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.x-nav-btn-sub {
+    font-size: 22px;
+    color: var(--grey-300);
+    margin-top: 4px;
+}
+
+/* Сетка остаётся прежней */
+.x-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px;
+}
+
+.x-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    table-layout: fixed; /* фиксированная сетка, чтобы max-width работал */
+}
+
+    .x-table th,
+    .x-table td {
+        padding: 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        vertical-align: top;
+        text-align: left;
+        /* управление шириной */
+        max-width: 260px; /* максимальная ширина колонки */
+        white-space: normal; /* разрешает перенос */
+        word-wrap: break-word; /* перенос длинных слов */
+        overflow-wrap: break-word;
+    }
+
+    .x-table th {
+        background: rgba(255,255,255,0.05);
+        font-weight: 600;
+    }
+
+#blazor-error-ui {
+    display: none !important;
+}

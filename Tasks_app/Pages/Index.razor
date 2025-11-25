@@ -1,0 +1,90 @@
+﻿@page "/"
+@inject IJSRuntime JS  
+
+<div class="x-hero fade-in observe">
+    <h1 class="x-hero-title">КонТест</h1>
+    <p class="x-hero-sub">Платформа для создания, анализа и структурирования задач</p>
+    <!-- Decorative illustration for the hero section -->
+    <img src="img/abstract-code.png" alt="Programming illustration" class="hero-illustration" />
+</div>
+
+<section class="x-section observe">
+    <!-- Gradient wrapper for the features section -->
+    <div class="x-features-section observe">
+        <h2 class="x-sec-title">Что делает КонТест удобным</h2>
+
+        <div class="x-features">
+
+            <div class="x-feature observe">
+                <h3>Быстрая работа интерфейса</h3>
+                <p>Оптимизированная структура позволяет выполнять рутинные действия значительно быстрее.</p>
+            </div>
+
+            <div class="x-feature observe">
+                <h3>Продвинутая логика задач</h3>
+                <p>Гибкая система условий, решений, тестов и категорий адаптируется под любой формат контента.</p>
+            </div>
+
+            <div class="x-feature observe">
+                <h3>Интеграции с внешними сервисами</h3>
+                <p>Экспорт задач и контестов в Polygon, Codeforces или Yandex Contest занимает считанные секунды.</p>
+            </div>
+
+            <div class="x-feature observe">
+                <h3>Подробная аналитика</h3>
+                <p>Отчёты по темам, сложности, активности и контестам помогают оценить качество задач.</p>
+            </div>
+
+            <div class="x-feature observe">
+                <h3>Удобная навигация</h3>
+                <p>Структурированные разделы и понятное меню сокращают время поиска нужной информации.</p>
+            </div>
+
+            <div class="x-feature observe">
+                <h3>Единая экосистема</h3>
+                <p>Задачи, контесты, теги, отчёты и аналитика работают вместе, исключая дублирование данных.</p>
+            </div>
+
+        </div>
+    </div>
+
+</section>
+
+<section class="x-section observe">
+    <h2 class="x-sec-title">Навигация по платформе</h2>
+
+    <div class="x-nav-grid">
+
+        <a class="x-nav-btn observe" href="/tasks">
+            <div class="x-nav-btn-title">Задачи</div>
+            <div class="x-nav-btn-sub">Работа со списком задач</div>
+        </a>
+
+        <a class="x-nav-btn observe" href="/tags">
+            <div class="x-nav-btn-title">Теги</div>
+            <div class="x-nav-btn-sub">Темы и категории</div>
+        </a>
+
+        <a class="x-nav-btn observe" href="/contests">
+            <div class="x-nav-btn-title">Контесты</div>
+            <div class="x-nav-btn-sub">Подборки заданий</div>
+        </a>
+
+        <a class="x-nav-btn observe" href="/reports">
+            <div class="x-nav-btn-title">Отчёты</div>
+            <div class="x-nav-btn-sub">Аналитика и статистика</div>
+        </a>
+
+    </div>
+</section>
+
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) // вызываем только один раз
+        {
+            await JS.InvokeVoidAsync("initScrollObserver"); // дергаем JS-функцию
+        }
+    }
+}

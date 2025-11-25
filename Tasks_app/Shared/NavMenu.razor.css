@@ -1,0 +1,41 @@
+.nav-panel {
+    white-space: nowrap;
+    overflow-x: clip;
+}
+
+
+.mobile-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 60px;
+    background: rgba(0,0,0,0.9);
+    padding: 10px;
+}
+
+     Открыто — когда есть класс open 
+    .mobile-menu.open {
+        display: block;
+    }
+
+ По умолчанию: мобильное меню скрыто, бургер скрыт 
+.mobile-only {
+    display: none !important;
+}
+
+.desktop-only {
+    display: flex !important;
+}
+
+ Мобильный режим 
+@media (max-width: 768px) {
+
+    .mobile-only {
+        display: block !important;
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+}
+

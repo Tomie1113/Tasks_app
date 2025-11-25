@@ -1,0 +1,35 @@
+﻿@page "/tasks/edit/{id:int}"
+
+<h1>Редактирование задачи</h1>
+
+<div class="edit-form">
+    <label>Название:</label>
+    <input type="text" />
+
+    <label>Условие:</label>
+    <textarea></textarea>
+
+    <label>Идея решения:</label>
+    <textarea></textarea>
+
+    <label>Polygon URL:</label>
+    <input type="text" />
+
+    <label>Готова для Yandex Contest:</label>
+    <input type="checkbox" />
+
+    <label>Сложность:</label>
+    <input type="number" min="1" max="10" />
+
+    <label>Примечания:</label>
+    <textarea></textarea>
+
+    <label>Теги:</label>
+    <div>[теги позже]</div>
+
+    <label>Контесты:</label>
+    <div>[контесты позже]</div>
+
+    <button>Сохранить</button>
+    <button>Отмена</button>
+</div>
