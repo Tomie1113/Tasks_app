@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Components.Web;
 using Npgsql;
 
 
-
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.SetMinimumLevel(LogLevel.Debug);
 builder.Logging.AddConsole();
