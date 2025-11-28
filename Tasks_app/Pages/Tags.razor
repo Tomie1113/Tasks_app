@@ -1,12 +1,111 @@
 ﻿@page "/tags"
+@inject Database Db
 
 <h1>Теги</h1>
 
-<div class="tags-table">
-    [таблица тегов позже]
-</div>
+@if (Tags_ == null)
+{
+    <p>Загрузка...</p>
+}
+else if (Tags_.Count == 0)
+{
+    <p>Теги отсутствуют.</p>
+}
+else
+{
+    <table class="x-table">
+        <thead>
+        <tr>
+            <th>Название</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        @foreach (var t in Tags_)
+        {
+            <tr>
+                <td>@t.NameContest</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
 
 <div class="tag-add">
-    <input type="text" placeholder="Новый тег" />
-    <button>Добавить</button>
+    <input @bind="tagInput" type="text" placeholder="Новый тег" />
+    <button @onclick="TagsAdd">Добавить</button>
 </div>
+
+@code
+{
+    private string tagInput;
+    
+    private List<TagItem>? Tags_;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTagsAsync();
+    }
+
+    private async Task LoadTagsAsync()
+    {
+        Tags_ = new();
+
+        using var conn = Db.GetConnection();
+        await conn.OpenAsync();
+
+        string sql = @"
+            SELECT
+                id_tag,
+                name_tag
+            FROM tags
+            ORDER BY id_tag;
+        ";
+
+        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            Tags_.Add(new TagItem
+            {
+                IdTag = reader.GetInt32(0),
+                NameContest = reader.GetString(1)
+            });
+        }
+    }
+    
+    public class TagItem
+    {
+        public int IdTag { get; set; }
+        public string NameContest { get; set; } = "";
+    }
+
+    private async Task TagsAdd()
+    {
+        //добавить инфу с поля ввода в бд
+        using var conn = Db.GetConnection();
+        await conn.OpenAsync();
+
+        string sql = @"
+            INSERT INTO tags (name_tag)
+            VALUES (:name)
+            ";
+
+        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
+
+        cmd.Parameters.Add(new NpgsqlParameter
+        {
+            ParameterName = "name",
+            Value = tagInput
+        });
+
+        await cmd.ExecuteNonQueryAsync();
+        //вывод сообщеения об успешном добавлении в бд
+            
+        //обновить таблицу
+        await LoadTagsAsync();
+        //стересь из input
+        tagInput = "";
+    }
+}
