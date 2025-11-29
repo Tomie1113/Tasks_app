@@ -3,22 +3,44 @@
 @inject AdminSession AdminState
 @inject NavigationManager NavigationManager
 
-<div class="login-page-container">
-    <div class="login-form">
-        <h2 style="text-align:center; margin-bottom:10px;">Вход администратора</h2>
 
-        <label>Логин</label>
-        <input type="text" @bind="Username" />
+<div class="x-container">
+    <div class="login-page-container">
+        <div class="login-form">
+            <h2 style="text-align:center; margin-bottom:10px;">Вход администратора</h2>
 
-        <label>Пароль</label>
-        <input type="password" @bind="Password" />
+            @if (!AdminState.IsAdmin)
+            {
+                <label>Логин</label>
+                <input type="text" @bind="Username" />
 
-        <button @onclick="Login_">Войти</button>
+                <label>Пароль</label>
+                <input type="password" @bind="Password" />
 
-        @if (!string.IsNullOrEmpty(Error))
-        {
-            <p style="color:red; text-align:center; margin-top:10px;">@Error</p>
-        }
+                <button @onclick="Login_">Войти</button>
+
+                @if (!string.IsNullOrEmpty(Error))
+                {
+                    <p style="color:red; text-align:center; margin-top:10px;">@Error</p>
+                }
+            }
+            else
+            {
+                @if (Success_enter)
+                {
+                    <p style="color:green; text-align:center; margin-top:10px;">
+                        Вы авторизовались под правами Администратора!
+                    </p>
+                }
+                else
+                {
+                    <p style="color:green; text-align:center; margin-top:10px;">
+                        Вы уже вошли как Администратор.
+                    </p>
+                }
+            }
+        </div>
+
     </div>
 </div>
 
@@ -26,9 +48,11 @@
     private string Username = "";
     private string Password = "";
     private string Error = "";
-
+    private string Success = "";
+    private bool Success_enter = false;
     private async Task Login_()
     {
+        AdminState.LoginAdmin();
         string hash = ComputeSha256(Password);
 
         using var conn = Db.GetConnection();
@@ -46,13 +70,16 @@
         {
             Error = "";
             AdminState.LoginAdmin();
-            NavigationManager.NavigateTo("/admin");
+
+            Success_enter = true;   // ← флаг первого входа
+            StateHasChanged();      // ← обновляем UI
         }
         else
         {
             Error = "Неверный логин или пароль.";
         }
     }
+
 
     private string ComputeSha256(string raw)
     {
