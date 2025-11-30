@@ -1,122 +1,704 @@
 ﻿@page "/tasks"
+@using QuestPDF.Fluent
+@using QuestPDF.Infrastructure
+@using QuestPDF.Helpers
+
 @inject Database Db
+@inject AdminSession Admin
+@inject IJSRuntime JS
 
-<h1>Список задач</h1>
 
-@if (Tasks_ == null)
-{
-    <p>Загрузка...</p>
-}
-else if (Tasks_.Count == 0)
-{
-    <p>Задачи отсутствуют.</p>
-}
-else
-{
-    <table class="x-table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Название</th>
-                <th>Условие</th>
-                <th>Идея решения</th>
-                <th>Polygon URL</th>
-                <th>CF</th>
-                <th>Yandex</th>
-                <th>Сложность</th>
-                <th>Заметки</th>
-                <th>Тег</th>
-                <th>Контекст</th>
-            </tr>
-        </thead>
+<div class="x-container">
 
-        <tbody>
-            @foreach (var t in Tasks_)
+    <h1 style="text-align:center; width:100%;">Задачи</h1>
+    <div class="task-filters" style="margin-bottom:20px; display:flex; flex-wrap:wrap; gap:12px;">
+
+        <input @bind="FilterText"
+               type="text"
+               placeholder="Поиск по названию / условию"
+               style="padding:6px 10px; width:260px;" />
+
+        <select @bind="FilterTag"
+                style="padding:6px 10px;">
+            <option value="0">Все теги</option>
+            @foreach (var t in Tags)
             {
-                <tr>
-                    <td>@t.IdTask</td>
-                    <td>@t.Name</td>
-                    <td>@t.Statement</td>
-                    <td>@t.SolutionIdea</td>
-                    <td>@t.PolygonUrl</td>
-                    <td>@t.IsPreparedCF</td>
-                    <td>@t.IsPreparedYandex</td>
-                    <td>@t.Difficulty</td>
-                    <td>@t.Notes</td>
-                    <td>@t.IdTag</td>
-                    <td>@t.IdContext</td>
-                </tr>
+                <option value="@t.IdTag">@t.Name</option>
             }
-        </tbody>
-    </table>
-}
+        </select>
 
-@code {
-    private List<TaskItem>? Tasks_;
+        <select @bind="FilterContext"
+                style="padding:6px 10px;">
+            <option value="0">Все контексты</option>
+            @foreach (var c in Contests)
+            {
+                <option value="@c.IdContest">@c.Name</option>
+            }
+        </select>
 
-    protected override async Task OnInitializedAsync()
+        <button @onclick="ApplyFilters"
+                style="padding:6px 14px;">
+            Фильтровать
+        </button>
+
+        <button @onclick="ResetFilters"
+                style="padding:6px 14px; background:#444; color:white;">
+            Сбросить
+        </button>
+
+    </div>
+    <button @onclick="ExportTasksToPdf">Сохранить в PDF</button>
+
+
+
+    @if (Tasks_ == null)
     {
-        await LoadTasksAsync();
+        <p>Загрузка...</p>
+    }
+    else if (Tasks_.Count == 0)
+    {
+        <p>Задачи отсутствуют.</p>
+    }
+    else
+    {
+        <table class="x-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Условие</th>
+                    <th>Идея</th>
+                    <th>Polygon</th>
+                    <th>CF</th>
+                    <th>Yandex</th>
+                    <th>Сложность</th>
+                    <th>Заметки</th>
+                    <th>Теги</th>
+                    <th>Контекст</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var t in Tasks_)
+                {
+                    <tr @key="t.IdTask">
+                        <td id="task-name-@t.IdTask">@t.Name</td>
+                        <td>@t.Statement</td>
+                        <td>@t.SolutionIdea</td>
+                        <td>@t.PolygonUrl</td>
+                        <td>@t.IsPreparedCF</td>
+                        <td>@t.IsPreparedYandex</td>
+                        <td>@t.Difficulty</td>
+                        <td>@t.Notes</td>
+                        <td>@(string.IsNullOrEmpty(t.Tags) ? "—" : t.Tags)</td>
+                        <td>@(string.IsNullOrEmpty(t.Contexts) ? "—" : t.Contexts)</td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
     }
 
-    private async Task LoadTasksAsync()
+    @if (Admin.IsAdmin)
     {
-        Tasks_ = new();
+        <div class="task-add" style="margin-top:25px; display:flex; flex-direction:column; gap:10px; max-width:600px;">
 
-        using var conn = Db.GetConnection();
-        await conn.OpenAsync();
+            <input @bind="NewTask.Name" type="text" placeholder="Название" /> @* поле названия *@
+            <textarea @bind="NewTask.Statement" placeholder="Условие"></textarea> @* многострочное условие *@
+            <textarea @bind="NewTask.SolutionIdea" placeholder="Идея решения"></textarea> @* идея решения *@
+            <input @bind="NewTask.PolygonUrl" type="text" placeholder="Polygon URL" /> @* ссылка на polygon *@
 
-        string sql = @"
-            SELECT
-                id_task,
-                name,
-                statement,
-                solution_idea,
-                polygon_url,
-                is_prepared_for_codeforces,
-                is_prepared_for_yandex,
-                difficulty,
-                notes,
-                id_tag,
-                id_context
-            FROM tasks
-            ORDER BY id_task;
-        ";
+            <div style="display:flex; gap:15px;">
+                <label><input type="checkbox" @bind="NewTask.IsCF" /> CF</label> @* флаг Codeforces *@
+                <label><input type="checkbox" @bind="NewTask.IsYandex" /> Yandex</label> @* флаг Yandex *@
+            </div>
 
-        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
-        using var reader = await cmd.ExecuteReaderAsync();
+            <input type="number" @bind="NewTask.Difficulty" min="1" max="10" placeholder="Сложность" /> @* сложность 1-10 *@
+            <textarea @bind="NewTask.Notes" placeholder="Заметки"></textarea> @* примечание *@
 
-        while (await reader.ReadAsync())
-        {
-            Tasks_.Add(new TaskItem
+            <label>Теги:</label>
+            <div class="task-tags-list" style="display:flex; flex-wrap:wrap; gap:8px;">
+                @foreach (var t in Tags)
                 {
-                    IdTask = reader.GetInt32(0),
-                    Name = reader.GetString(1),
-                    Statement = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    SolutionIdea = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    PolygonUrl = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    IsPreparedCF = reader.IsDBNull(5) ? false : reader.GetBoolean(5),
-                    IsPreparedYandex = reader.IsDBNull(6) ? false : reader.GetBoolean(6),
-                    Difficulty = reader.IsDBNull(7) ? null : reader.GetInt32(7),
-                    Notes = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                    IdTag = reader.IsDBNull(9) ? 0 : reader.GetInt32(9),
-                    IdContext = reader.IsDBNull(10) ? 0 : reader.GetInt32(10)
-                });
-        }
+                    <label style="display:flex; align-items:center; gap:4px; font-size:var(--fs-table);">
+                        <input type="checkbox"
+                               value="@t.IdTag"
+                               checked="@SelectedTags.Contains(t.IdTag)"
+                               @onchange="args => OnTagToggle(t.IdTag, (bool)args.Value)" /> @* чекбокс для тега *@
+                        @t.Name
+                    </label>
+                }
+            </div>
+
+            <label>Контексты:</label>
+            <div class="task-contexts-list" style="display:flex; flex-wrap:wrap; gap:8px;">
+                @foreach (var c in Contests)
+                {
+                    <label style="display:flex; align-items:center; gap:4px; font-size:var(--fs-table);">
+                        <input type="checkbox"
+                               value="@c.IdContest"
+                               checked="@SelectedContexts.Contains(c.IdContest)"
+                               @onchange="args => OnContextToggle(c.IdContest, (bool)args.Value)" />
+                        @c.Name
+                    </label>
+                }
+            </div>
+
+
+            <button @onclick="AddTask">Добавить задачу</button> @* кнопка добавления *@
+        </div>
+    }
+
+    <div id="task-delete-dialog"
+         style="display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
+            align-items:center; justify-content:center; z-index:9999;">
+        <div style="background:var(--surface); padding:20px; border-radius:12px; width:260px;
+                font-family:var(--font-main); text-align:center;
+                border:1px solid var(--surface-border); backdrop-filter:blur(16px);">
+
+            <div style="margin-bottom:15px; font-size:var(--fs-table); color:var(--grey-50);">
+                Удалить задачу?
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button id="task-del-yes" style="padding:10px 14px;">Удалить</button> @* подтверждение удаления *@
+                <button id="task-del-no" style="padding:10px 14px;">Отмена</button> @* отмена удаления *@
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private HashSet<int> SelectedContexts = new();
+
+    private string FilterText = "";
+    private int FilterTag = 0;
+    private int FilterContext = 0;
+
+    // -----------------------------
+    // MODELS
+    // -----------------------------
+
+    private DotNetObjectReference<Tasks> selfObj; // ссылка на компонент для JS
+
+    private NewTaskModel NewTask = new();         // модель новой задачи
+    private HashSet<int> SelectedTags = new();    // выбранные теги (IdTag)
+
+    public class NewTaskModel
+    {
+        public string Name { get; set; } = "";           // название задачи
+        public string Statement { get; set; } = "";      // условие
+        public string SolutionIdea { get; set; } = "";   // идея решения
+        public string PolygonUrl { get; set; } = "";     // ссылка на polygon
+        public bool IsCF { get; set; }                   // подготовлена для CF
+        public bool IsYandex { get; set; }               // подготовлена для Yandex
+        public int Difficulty { get; set; }              // сложность 1-10
+        public string Notes { get; set; } = "";          // примечание
+        public int IdContext { get; set; }               // выбранный контест
     }
 
     public class TaskItem
     {
-        public int IdTask { get; set; }
-        public string Name { get; set; } = "";
-        public string Statement { get; set; } = "";
-        public string SolutionIdea { get; set; } = "";
-        public string PolygonUrl { get; set; } = "";
-        public bool IsPreparedCF { get; set; }
-        public bool IsPreparedYandex { get; set; }
-        public int? Difficulty { get; set; }
-        public string Notes { get; set; } = "";
-        public int IdTag { get; set; }
-        public int IdContext { get; set; }
+        public int IdTask { get; set; }                  // ID задачи
+        public string Name { get; set; } = "";           // название
+        public string Statement { get; set; } = "";      // условие
+        public string SolutionIdea { get; set; } = "";   // идея
+        public string PolygonUrl { get; set; } = "";     // polygon URL
+        public bool IsPreparedCF { get; set; }           // подготовлено CF
+        public bool IsPreparedYandex { get; set; }       // подготовлено Yandex
+        public int? Difficulty { get; set; }             // сложность
+        public string Notes { get; set; } = "";          // заметки
+        public string Tags { get; set; } = "";           // перечисление тегов
+        public string Contexts { get; set; } = "";
+
+    }
+
+    public class TagRef
+    {
+        public int IdTag { get; set; }                   // ID тега
+        public string Name { get; set; } = "";           // название тега
+    }
+
+    public class ContestRef
+    {
+        public int IdContest { get; set; }               // ID контеста
+        public string Name { get; set; } = "";           // название контеста
+    }
+    private void OnContextToggle(int ctxId, bool isChecked)
+    {
+        if (isChecked)
+            SelectedContexts.Add(ctxId);
+        else
+            SelectedContexts.Remove(ctxId);
+    }
+
+    private List<TagRef> Tags = new();                   // список доступных тегов
+    private List<ContestRef> Contests = new();           // список контестов
+    private List<TaskItem>? Tasks_;                      // текущие задачи
+    private async Task SavePdf()
+    {
+        if (Tasks_ == null || Tasks_.Count == 0)
+            return;
+
+        var html = new System.Text.StringBuilder();
+
+        html.Append("<h2>Отчёт по задачам</h2>");
+        html.Append("<table border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; width:100%;'>");
+
+        html.Append("<tr>");
+        html.Append("<th>Название</th>");
+        html.Append("<th>Условие</th>");
+        html.Append("<th>Теги</th>");
+        html.Append("<th>Контекст</th>");
+        html.Append("<th>Сложность</th>");
+        html.Append("</tr>");
+
+        foreach (var t in Tasks_)
+        {
+            html.Append("<tr>");
+            html.Append($"<td>{t.Name}</td>");
+            html.Append($"<td>{t.Statement}</td>");
+            html.Append($"<td>{t.Tags}</td>");
+            html.Append($"<td>{t.Contexts}</td>");
+
+            html.Append($"<td>{t.Difficulty}</td>");
+            html.Append("</tr>");
+        }
+
+        html.Append("</table>");
+
+        var bytes = System.Text.Encoding.UTF8.GetBytes(html.ToString());
+
+        var base64 = Convert.ToBase64String(bytes);
+
+        await JS.InvokeVoidAsync("downloadFile", "report.pdf", base64);
+    }
+    public Tasks()
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+    }
+
+    public async Task ExportTasksToPdf()
+    {
+        if (Tasks_ == null || Tasks_.Count == 0)
+            return;
+
+        string outputPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+            "tasks_report.pdf"
+        );
+
+        var doc = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Margin(25);
+                page.Size(PageSizes.A4);
+                page.Content().Table(table =>
+                {
+                    // ОПРЕДЕЛЯЕМ КОЛОНКИ
+                    table.ColumnsDefinition(col =>
+                    {
+                        col.RelativeColumn(2); // Название
+                        col.RelativeColumn(3); // Условие
+                        col.RelativeColumn(2); // Идея
+                        col.RelativeColumn(2); // Tags
+                        col.RelativeColumn(2); // Context
+                    });
+
+                    // ШАПКА
+                    table.Header(header =>
+                    {
+                        header.Cell().Text("Название").Bold();
+                        header.Cell().Text("Условие").Bold();
+                        header.Cell().Text("Идея").Bold();
+                        header.Cell().Text("Теги").Bold();
+                        header.Cell().Text("Контекст").Bold();
+                    });
+
+                    // СТРОКИ
+                    foreach (var t in Tasks_)
+                    {
+                        table.Cell().Text(t.Name ?? "");
+                        table.Cell().Text(t.Statement ?? "");
+                        table.Cell().Text(t.SolutionIdea ?? "");
+                        table.Cell().Text(t.Tags ?? "—");
+                        table.Cell().Text(t.Contexts ?? "—");
+
+                    }
+                });
+            });
+        });
+
+        doc.GeneratePdf(outputPath);
+    }
+
+
+
+    // -----------------------------
+    // ЕДИНЫЙ стиль ячейки
+    // -----------------------------
+    private IContainer CellStyle(IContainer x) =>
+        x.Padding(4).BorderBottom(1).BorderColor("#cccccc");
+
+
+    // -----------------------------
+    // INIT
+    // -----------------------------
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRefsAsync();   // загрузка тегов и контестов
+        await LoadTasksAsync();  // загрузка задач
+    }
+    private async Task ApplyFilters()
+    {
+        await LoadTasksAsync(); // перезагружаем задачи
+
+        // строковый фильтр
+        if (!string.IsNullOrWhiteSpace(FilterText))
+        {
+            string f = FilterText.ToLower();
+            Tasks_ = Tasks_.Where(t =>
+                   (t.Name?.ToLower().Contains(f) ?? false)
+                || (t.Statement?.ToLower().Contains(f) ?? false)
+            ).ToList();
+        }
+
+        // фильтр по тегу
+        if (FilterTag != 0)
+        {
+            Tasks_ = Tasks_.Where(t =>
+                !string.IsNullOrEmpty(t.Tags)
+                && t.Tags.Split(", ").Contains(
+                    Tags.First(x => x.IdTag == FilterTag).Name
+                )
+            ).ToList();
+        }
+
+        // фильтр по контексту
+        if (FilterContext != 0)
+        {
+            var name = Contests.First(x => x.IdContest == FilterContext).Name;
+            Tasks_ = Tasks_.Where(t =>
+                   !string.IsNullOrEmpty(t.Contexts)
+                && t.Contexts.Split(", ").Contains(name)
+            ).ToList();
+
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ResetFilters()
+    {
+        FilterText = "";
+        FilterTag = 0;
+        FilterContext = 0;
+        await LoadTasksAsync();     // полный список
+        StateHasChanged();
+    }
+
+    // -----------------------------
+    // LOAD REF TABLES
+    // -----------------------------
+    private async Task LoadRefsAsync()
+    {
+        using var conn = Db.GetConnection();   // создаём подключение
+        await conn.OpenAsync();                // открываем подключение
+
+        // TAGS
+        {
+            string sql = "SELECT id_tag, name_tag FROM tags ORDER BY name_tag"; // SQL для тегов
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);                // создаём команду
+            using var r = await cmd.ExecuteReaderAsync();                       // выполняем запрос
+
+            Tags.Clear();                                                       // очищаем список тегов
+            while (await r.ReadAsync())                                         // читаем строки
+                Tags.Add(new TagRef
+                    {
+                        IdTag = r.GetInt32(0),                                      // id_tag
+                        Name = r.GetString(1)                                       // name_tag
+                    });
+
+            r.Close();                                                          // закрываем reader
+        }
+
+        // CONTESTS
+        {
+            string sql = "SELECT id_contest, name_contest FROM contests ORDER BY name_contest"; // SQL для контестов
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);                                // команда
+            using var r = await cmd.ExecuteReaderAsync();                                       // reader
+
+            Contests.Clear();                                                                   // очищаем список контестов
+            while (await r.ReadAsync())                                                         // читаем строки
+                Contests.Add(new ContestRef
+                    {
+                        IdContest = r.GetInt32(0),                                                  // id_contest
+                        Name = r.GetString(1)                                                       // name_contest
+                    });
+        }
+    }
+
+    // -----------------------------
+    // LOAD TASKS
+    // -----------------------------
+    private async Task LoadTasksAsync()
+    {
+        Tasks_ = new();                                   // создаём список задач
+
+        using var conn = Db.GetConnection();              // подключение
+        await conn.OpenAsync();                           // открываем
+
+        string sql = @"
+            SELECT
+    t.id_task,
+    t.name,
+    t.statement,
+    t.solution_idea,
+    t.polygon_url,
+    t.is_prepared_for_codeforces,
+    t.is_prepared_for_yandex,
+    t.difficulty,
+    t.notes,
+    COALESCE(string_agg(DISTINCT tg.name_tag, ', '), '') AS tags,
+    COALESCE(string_agg(DISTINCT c.name_contest, ', '), '') AS contexts
+FROM tasks t
+LEFT JOIN task_tags tt ON t.id_task = tt.id_task
+LEFT JOIN tags tg ON tg.id_tag = tt.id_tag
+LEFT JOIN task_contests tc ON t.id_task = tc.id_task
+LEFT JOIN contests c ON c.id_contest = tc.id_contest
+GROUP BY t.id_task
+ORDER BY t.id_task;
+
+        ";                                                // SQL с агрегацией тегов
+
+        using var cmd = new Npgsql.NpgsqlCommand(sql, conn); // команда
+        using var reader = await cmd.ExecuteReaderAsync();   // reader
+
+        while (await reader.ReadAsync())                     // читаем строки
+        {
+            Tasks_.Add(new TaskItem
+                {
+                    IdTask = reader.GetInt32(0),                 // id_task
+                    Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    Statement = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                    SolutionIdea = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                    PolygonUrl = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    IsPreparedCF = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                    IsPreparedYandex = !reader.IsDBNull(6) && reader.GetBoolean(6),
+                    Difficulty = reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                    Notes = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                    Tags = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                    Contexts = reader.IsDBNull(10) ? "" : reader.GetString(10)
+
+                });
+        }
+    }
+
+    // -----------------------------
+    // TAG CHECKBOX HANDLER
+    // -----------------------------
+    private void OnTagToggle(int tagId, bool isChecked)
+    {
+        if (isChecked)                                     // если включили чекбокс
+            SelectedTags.Add(tagId);                       // добавляем тег
+        else
+            SelectedTags.Remove(tagId);                    // убираем тег
+    }
+
+    // -----------------------------
+    // ADD TASK (WITH TAGS)
+    // -----------------------------
+    private async Task AddTask()
+    {
+        using var conn = Db.GetConnection();               // подключение
+        await conn.OpenAsync();                            // открываем
+
+        string sql = @"
+            INSERT INTO tasks
+            (name, statement, solution_idea, polygon_url,
+             is_prepared_for_codeforces, is_prepared_for_yandex,
+             difficulty, notes, id_context)
+            VALUES
+            (:n, :st, :si, :p, :cf, :ya, :d, :no, :ctx)
+            RETURNING id_task;
+        ";                                                 // SQL вставки задачи
+
+        int newId;                                         // ID новой задачи
+
+        using (var cmd = new Npgsql.NpgsqlCommand(sql, conn)) // команда вставки
+        {
+            cmd.Parameters.AddWithValue("n", NewTask.Name);                // параметр name
+            cmd.Parameters.AddWithValue("st", NewTask.Statement);          // параметр statement
+            cmd.Parameters.AddWithValue("si", NewTask.SolutionIdea);       // параметр solution_idea
+            cmd.Parameters.AddWithValue("p", NewTask.PolygonUrl);          // параметр polygon_url
+            cmd.Parameters.AddWithValue("cf", NewTask.IsCF);               // параметр CF
+            cmd.Parameters.AddWithValue("ya", NewTask.IsYandex);           // параметр Yandex
+            cmd.Parameters.AddWithValue("d", NewTask.Difficulty);          // параметр difficulty
+            cmd.Parameters.AddWithValue("no", NewTask.Notes);              // параметр notes
+            cmd.Parameters.AddWithValue("ctx", NewTask.IdContext == 0
+                ? DBNull.Value                                            // если контест не выбран
+                : NewTask.IdContext);                                     // иначе ID контеста
+
+            newId = Convert.ToInt32(await cmd.ExecuteScalarAsync());      // получаем id_task
+        }
+
+        // Записываем связи с тегами
+        foreach (var tagId in SelectedTags)
+        {
+            string sqlTag = @"INSERT INTO task_tags (id_task, id_tag) VALUES (:t, :g)"; // SQL для task_tags
+            using var tagCmd = new Npgsql.NpgsqlCommand(sqlTag, conn);                  // команда
+            tagCmd.Parameters.AddWithValue("t", newId);                                 // id_task
+            tagCmd.Parameters.AddWithValue("g", tagId);                                 // id_tag
+            await tagCmd.ExecuteNonQueryAsync();                                        // выполняем вставку
+        }
+        // Insert contexts
+        foreach (var ctxId in SelectedContexts)
+        {
+            string sqlCtx = @"INSERT INTO task_contests (id_task, id_contest) VALUES (:t, :c)";
+            using var ctxCmd = new Npgsql.NpgsqlCommand(sqlCtx, conn);
+            ctxCmd.Parameters.AddWithValue("t", newId);
+            ctxCmd.Parameters.AddWithValue("c", ctxId);
+            await ctxCmd.ExecuteNonQueryAsync();
+        }
+
+        NewTask = new();                                // сбрасываем форму
+        SelectedTags.Clear();                           // очищаем выбранные теги
+
+        await LoadTasksAsync();                         // перегружаем задачи
+        StateHasChanged();                              // обновляем UI
+    }
+
+    // -----------------------------
+    // DELETE TASK
+    // -----------------------------
+    private async Task DeleteTask(int id)
+    {
+        System.Diagnostics.Debug.WriteLine("======================================");
+        System.Diagnostics.Debug.WriteLine($"[Tasks] >>> НАЧАТЬ УДАЛЕНИЕ ЗАДАЧИ ID={id}");
+        System.Diagnostics.Debug.WriteLine("======================================");
+
+        try
+        {
+            using var conn = Db.GetConnection();
+            await conn.OpenAsync();
+            System.Diagnostics.Debug.WriteLine("[Tasks] Подключение к БД ОК");
+
+            // ============================
+            // 1) УДАЛЕНИЕ СВЯЗЕЙ С ТЕГАМИ
+            // ============================
+
+            {
+                string sql = "DELETE FROM task_tags WHERE id_task = :id";
+                System.Diagnostics.Debug.WriteLine($"[Tasks] Удаляем связи с тегами: {sql}");
+
+                using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("id", id);
+
+                int rows = await cmd.ExecuteNonQueryAsync();
+                System.Diagnostics.Debug.WriteLine($"[Tasks] Связей tag удалено: {rows}");
+            }
+
+            // =================================
+            // 2) УДАЛЕНИЕ СВЯЗЕЙ С КОНТЕСТАМИ
+            // =================================
+
+            {
+                string sql = "DELETE FROM task_contests WHERE id_task = :id";
+                System.Diagnostics.Debug.WriteLine($"[Tasks] Удаляем связи с контестами: {sql}");
+
+                using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("id", id);
+
+                int rows = await cmd.ExecuteNonQueryAsync();
+                System.Diagnostics.Debug.WriteLine($"[Tasks] Связей contests удалено: {rows}");
+            }
+
+            // ============================
+            // 3) УДАЛЕНИЕ САМОЙ ЗАДАЧИ
+            // ============================
+
+            {
+                string sql = "DELETE FROM tasks WHERE id_task = :id";
+                System.Diagnostics.Debug.WriteLine($"[Tasks] Удаляем задачу: {sql}");
+
+                using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("id", id);
+
+                int rows = await cmd.ExecuteNonQueryAsync();
+                System.Diagnostics.Debug.WriteLine($"[Tasks] Задача удалена, затронуто строк: {rows}");
+            }
+
+            // ============================
+            // 4) ОБНОВЛЕНИЕ СПИСКА
+            // ============================
+
+            System.Diagnostics.Debug.WriteLine("[Tasks] Обновляем список задач...");
+            await LoadTasksAsync();
+            StateHasChanged();
+
+            System.Diagnostics.Debug.WriteLine("======================================");
+            System.Diagnostics.Debug.WriteLine($"[Tasks] >>> УДАЛЕНИЕ ЗАДАЧИ ID={id} ЗАВЕРШЕНО");
+            System.Diagnostics.Debug.WriteLine("======================================");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            System.Diagnostics.Debug.WriteLine("[Tasks] ОШИБКА ПРИ УДАЛЕНИИ ЗАДАЧИ");
+            System.Diagnostics.Debug.WriteLine($"[Tasks] Тип: {ex.GetType()}");
+            System.Diagnostics.Debug.WriteLine($"[Tasks] Сообщение: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[Tasks] StackTrace: {ex.StackTrace}");
+            System.Diagnostics.Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+            throw;
+        }
+    }
+
+
+
+
+    // -----------------------------
+    // JS CALLBACKS
+    // -----------------------------
+    [JSInvokable]
+    public async Task RequestTaskDelete(int id) => await DeleteTask(id); // JS → C#: удалить задачу
+
+    [JSInvokable]
+    public async Task RequestTaskRename(int id, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))          // если пустое имя
+            return;                                   // выходим
+
+        using var conn = Db.GetConnection();          // подключение
+        await conn.OpenAsync();                       // открываем
+
+        string sql = @"UPDATE tasks SET name = :n WHERE id_task = :id"; // SQL обновления названия
+
+        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);           // команда
+        cmd.Parameters.AddWithValue("n", name);                        // новое имя
+        cmd.Parameters.AddWithValue("id", id);                         // id_task
+        await cmd.ExecuteNonQueryAsync();                              // выполняем
+
+        await LoadTasksAsync();                                       // перегружаем задачи
+        StateHasChanged();                                            // обновляем UI
+    }
+
+    // -----------------------------
+    // JS INIT (привязка событий к строкам)
+    // -----------------------------
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Tasks_ == null)                          // если задач нет
+            return;                                  // выходим
+
+        foreach (var t in Tasks_)                    // для каждой задачи
+            await JS.InvokeVoidAsync("TasksInterop.bindRowEventsById", t.IdTask); // привязка JS-событий
+
+        if (firstRender)                             // только при первом рендере
+        {
+            selfObj = DotNetObjectReference.Create(this);            // создаём ссылку на компонент
+            await JS.InvokeVoidAsync("TasksInterop.setComponent", selfObj); // передаём её в JS
+        }
     }
 }
