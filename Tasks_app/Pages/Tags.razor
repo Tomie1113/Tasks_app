@@ -104,6 +104,7 @@
         }
 
     }
+    
 
     // ---------- JS CALLBACKS -----------
 
@@ -116,13 +117,15 @@
     [JSInvokable]
     public async Task RequestTagDelete(int id)
     {
-        await DeleteTag(id);
+        if (Admin.IsAdmin)
+            await DeleteTag(id);
     }
 
     [JSInvokable]
     public async Task RequestTagRename(int id, string newName)
     {
-        await RenameTag(id, newName);
+        if (Admin.IsAdmin)
+            await RenameTag(id, newName);
     }
 
 

@@ -1,236 +1,12 @@
-﻿@* @page "/contests"
-@using Npgsql
-@inject Database Db
-@inject AdminSession Admin
-@inject IJSRuntime JS
-
-<div class="x-container">
-    <h1 style="text-align:center; width:100%;">Контесты</h1>
-
-    @if (Contests_ == null)
-    {
-        <p>Загрузка...</p>
-    }
-    else if (Contests_.Count == 0)
-    {
-        <p>Контесты отсутствуют.</p>
-    }
-    else
-    {
-        <table class="x-table">
-            <thead>
-                <tr>
-                    <th>Название</th>
-                    <th>Год</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var c in Contests_)
-                {
-                    <tr @key="c.IdContest">
-                        <td id="contest-name-@c.IdContest">@c.NameContest</td>
-                        <td id="contest-year-@c.IdContest">@c.YearContest</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-
-
-    @if (Admin.IsAdmin)
-    {
-        <div class="tag-add">
-            <input @bind="NameInput" type="text" placeholder="Название" />
-            <input @bind="YearInput" type="number" placeholder="Год" style="width:90px;" />
-            <button @onclick="AddContest">Добавить</button>
-        </div>
-    }
-</div>
-
-<div id="contest-delete-dialog" class="tag-delete-dialog">
-    <div class="tag-dialog-box">
-        <div class="tag-dialog-title">Удалить контест?</div>
-        <div class="tag-dialog-buttons">
-            <button id="contest-del-yes">Удалить</button>
-            <button id="contest-del-no">Отмена</button>
-        </div>
-    </div>
-</div>
-
-@code {
-    // ---------- STATE ----------
-    private static Contests Instance;
-
-    private bool IsEditing = false;
-    private List<ContestItem> Contests_ = new();
-
-    private string NameInput = "";
-    private int YearInput = 0;
-
-    // ---------- INIT ----------
-    protected override void OnInitialized()
-    {
-        Instance = this;
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadContestsAsync();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (IsEditing)
-            return;
-
-        if (Contests_ != null)
-        {
-            foreach (var c in Contests_)
-                await JS.InvokeVoidAsync("ContestsInterop.bindRowEventsById", c.IdContest);
-        }
-    }
-
-    // ---------- JS CALLBACKS ----------
-    [JSInvokable]
-    public static void StartEdit()
-    {
-        Instance.IsEditing = true;
-    }
-
-    [JSInvokable]
-    public static async Task RequestContestDelete(int id)
-    {
-        await Instance.DeleteContest(id);
-    }
-
-    [JSInvokable]
-    public static async Task RequestContestRename(int id, string column, string val)
-    {
-        await Instance.RenameContest(id, column, val);
-    }
-
-    // ---------- LOAD ----------
-    private async Task LoadContestsAsync()
-    {
-        if (IsEditing)
-            return;
-
-        Contests_ = new();
-
-        using var conn = Db.GetConnection();
-        await conn.OpenAsync();
-
-        string sql = @"SELECT id_contest, name_contest, year_contest
-                       FROM contests ORDER BY id_contest";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
-        using var reader = await cmd.ExecuteReaderAsync();
-
-        while (await reader.ReadAsync())
-        {
-            Contests_.Add(new ContestItem
-                {
-                    IdContest = reader.GetInt32(0),
-                    NameContest = reader.GetString(1),
-                    YearContest = reader.GetInt32(2)
-                });
-        }
-    }
-
-    // ---------- RENAME ----------
-    public async Task RenameContest(int id, string column, string value)
-    {
-        IsEditing = true;
-
-        using var conn = Db.GetConnection();
-        await conn.OpenAsync();
-
-        string sql = $"UPDATE contests SET {column} = :v WHERE id_contest = :id";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("v", value);
-        cmd.Parameters.AddWithValue("id", id);
-
-        await cmd.ExecuteNonQueryAsync();
-
-        IsEditing = false;
-
-        await LoadContestsAsync();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    // ---------- DELETE ----------
-    public async Task DeleteContest(int id)
-    {
-        using var conn = Db.GetConnection();
-        await conn.OpenAsync();
-
-        string checkSql = "SELECT COUNT(*) FROM tasks WHERE id_contest = :id";
-
-        using var checkCmd = new NpgsqlCommand(checkSql, conn);
-        checkCmd.Parameters.AddWithValue("id", id);
-
-        int used = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
-        if (used > 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Контест используется в задачах");
-            return;
-        }
-
-        string sql = "DELETE FROM contests WHERE id_contest = :id";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("id", id);
-
-        await cmd.ExecuteNonQueryAsync();
-
-        await LoadContestsAsync();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    // ---------- ADD ----------
-    private async Task AddContest()
-    {
-        if (string.IsNullOrWhiteSpace(NameInput))
-            return;
-
-        using var conn = Db.GetConnection();
-        await conn.OpenAsync();
-
-        string sql = @"INSERT INTO contests (name_contest, year_contest)
-                       VALUES (:n, :y)";
-
-        using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("n", NameInput);
-        cmd.Parameters.AddWithValue("y", YearInput);
-
-        await cmd.ExecuteNonQueryAsync();
-
-        NameInput = "";
-        YearInput = 0;
-
-        await LoadContestsAsync();
-    }
-
-    // ---------- MODEL ----------
-    public class ContestItem
-    {
-        public int IdContest { get; set; }
-        public string NameContest { get; set; } = string.Empty;
-        public int YearContest { get; set; }
-    }
-}
-
- *@
-
-
-        @page "/contests"
+﻿@page "/contests"
 @using System.Data
 @using Microsoft.AspNetCore.Mvc
 @using NpgsqlTypes
 @inject Database Db
 @inject AdminSession Admin
+@inject IJSRuntime JS
 
+<div class="x-container" @ref="selfRef">
 <h1>Контесты</h1>
 
 @if (Contests_ == null)
@@ -252,11 +28,11 @@ else
         </thead>
 
         <tbody>
-            @foreach (var t in Contests_)
+            @foreach (var c in Contests_)
             {
-                <tr>
-                    <td>@t.NameContest</td>
-                    <td>@t.YearContest</td>
+                <tr @key="c.IdContest">
+                    <td id="contest-name-@c.IdContest">@c.NameContest</td>
+                    <td id="contest-year-@c.IdContest">@c.YearContest</td>
                 </tr>
             }
         </tbody>
@@ -265,19 +41,50 @@ else
 
     @if (Admin.IsAdmin)
     {
-<div class="contest-add">
-    <input @bind="nameInput" type="text" placeholder="Название" />
-    <input @bind="yearInput" type="number" maxlength="4" placeholder="Год" />
-    <button @onclick="ContestsAdd">Добавить</button>
-</div>
+        <div class="contest-add">
+            <input @bind="nameInput" type="text" placeholder="Название" />
+            <input @bind="yearInput" type="number" maxlength="4" placeholder="Год" />
+            <button @onclick="ContestsAdd">Добавить</button>
+        </div>
     }
+    <div id="contest-delete-dialog"
+         style="display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
+            align-items:center; justify-content:center; z-index:9999;">
 
-@code
-{
+        <div style="background:var(--surface); padding:20px; border-radius:12px; width:260px;
+                font-family:var(--font-main); text-align:center;
+                border:1px solid var(--surface-border); backdrop-filter:blur(16px);">
+
+            <div style="margin-bottom:15px; font-size:var(--fs-table); color:var(--grey-50);">
+                Удалить контест?
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center;">
+
+                <button id="contest-del-yes"
+                        style="padding:10px 14px; border-radius:6px; cursor:pointer;">
+                    Удалить
+                </button>
+
+                <button id="contest-del-no"
+                        style="padding:10px 14px; border-radius:6px; cursor:pointer;">
+                    Отмена
+                </button>
+
+            </div>
+        </div>
+    </div>
+</div>
+    
+@code {
     private string nameInput;
     private int yearInput;
-
+    private bool IsEditing = false;
+    
     private List<ContestItem>? Contests_;
+    private ElementReference selfRef;
+    private DotNetObjectReference<Contests> selfObj;
 
     protected override async Task OnInitializedAsync()
     {
@@ -359,6 +166,148 @@ else
             //стересь из input
             nameInput = "";
             yearInput = 0;
+        }
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Contests_ == null)
+            return;
+
+        foreach (var t in Contests_)
+            await JS.InvokeVoidAsync("ContestsInterop.bindRowEventsById", t.IdContest);
+        if (firstRender)
+        {
+            selfObj = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("ContestsInterop.setComponent", selfObj);
+        }
+
+    }
+    
+    // ---------- JS CALLBACKS -----------
+
+    [JSInvokable]
+    public void StartEdit()
+    {
+        IsEditing = true;
+    }
+
+    [JSInvokable]
+    public async Task RequestContestDelete(int id)
+    {
+        if (Admin.IsAdmin)
+            await DeleteContest(id);
+    }
+
+    [JSInvokable]
+    public async Task RequestContestRename(int id, string newElem, string type)
+    {
+        if (Admin.IsAdmin)
+            await RenameContest(id, newElem, GetRenameContestType(type));
+    }
+    
+    [JSInvokable]
+    public async Task JsLoadContestsAsync()
+    {
+        if (Admin.IsAdmin)
+            await LoadContestsAsync();
+    }
+
+
+    // ---------- RENAME ----------
+
+    public enum RenameContestType
+    {
+        Name,
+        Year
+    }
+
+    private RenameContestType GetRenameContestType(string type)
+    {
+        return type switch
+        {
+            "name" => RenameContestType.Name,
+            "year" => RenameContestType.Year,
+            _ => throw new Exception()
+        };
+    }
+    
+    public async Task RenameContest(int id, string value, RenameContestType type)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            await JS.InvokeVoidAsync("alert", "Название не может быть пустым");
+            return;
+        }
+
+        await using var conn = Db.GetConnection();
+        await conn.OpenAsync();
+
+        NpgsqlCommand cmd;
+        switch (type)
+        {
+            case RenameContestType.Name:
+                var sql = "UPDATE contests SET name_contest = :name WHERE id_contest = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("name", value);
+                break;
+            case RenameContestType.Year:
+                sql = "UPDATE contests SET year_contest = :year WHERE id_contest = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                int intValue;
+                if (!int.TryParse(value, out intValue))
+                    throw new Exception("Year was not a number!");
+                cmd.Parameters.AddWithValue("year", intValue);
+                break;
+            default:
+                throw new Exception();
+        }
+        cmd.Parameters.AddWithValue("id", id);
+        await cmd.ExecuteNonQueryAsync();
+        
+        IsEditing = false;  // ← НОВАЯ СТРОКА
+
+        await LoadContestsAsync();
+        await InvokeAsync(StateHasChanged);
+
+    }
+    
+    public async Task DeleteContest(int id)
+    {
+        try
+        {
+            using var conn = Db.GetConnection();
+            await conn.OpenAsync();
+
+            string checkSql = "SELECT COUNT(*) FROM task_contests WHERE id_contest = :id";
+
+            //проверка
+            using var checkCmd = new Npgsql.NpgsqlCommand(checkSql, conn);
+            checkCmd.Parameters.AddWithValue("id", id);
+            int inUse = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+            if (inUse > 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Контест используется в задачах. Удаление невозможно.");
+                return;
+            }
+
+            //удаление
+            string sql = "DELETE FROM contests WHERE id_contest = :id";
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("id", id);
+            int rows = await cmd.ExecuteNonQueryAsync();
+
+            //обновление
+            await LoadContestsAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex.Message);
+            throw;
         }
     }
 }

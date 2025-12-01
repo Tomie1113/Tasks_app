@@ -1,4 +1,13 @@
-﻿window.ContestsInterop = {
+﻿let comp2 = null;
+
+window.ContestsInterop = {
+    
+    // =====================
+    //   ПОЛУЧЕНИЕ ССЫЛКИ НА КОМПОНЕНТ
+    // =====================
+    setComponent: function (instance) {
+        comp2 = instance;
+    },
 
     // =====================
     //   ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ
@@ -13,6 +22,7 @@
 
         const close = () => dialog.style.display = "none";
 
+        // удаляем старые обработчики, чтобы не повторялись
         yes.replaceWith(yes.cloneNode(true));
         no.replaceWith(no.cloneNode(true));
 
@@ -21,7 +31,7 @@
 
         yesNew.addEventListener("click", () => {
             close();
-            DotNet.invokeMethodAsync("Tasks_app", "RequestContestDelete", id);
+            comp2.invokeMethodAsync("RequestContestDelete", id);
         });
 
         noNew.addEventListener("click", () => {
@@ -32,7 +42,7 @@
     // =====================
     //    ОБРАБОТКА СТРОК
     // =====================
-    bindRowEvents: function (element, id, column) {
+    bindRowEvents: function (element, id) {
 
         // ПКМ → диалог удаления
         element.addEventListener("contextmenu", function (e) {
@@ -51,11 +61,13 @@
 
         // Двойной клик → редактирование
         element.addEventListener("dblclick", function () {
+            
+            comp2.invokeMethodAsync("StartEdit");
 
-            DotNet.invokeMethodAsync("Tasks_app", "StartEdit");
-
+            // Удаляем прошлый input
             const old = element.querySelector("input");
-            if (old) old.remove();
+            if (old)
+                old.remove();
 
             const currentValue = element.innerText.trim();
 
@@ -71,13 +83,23 @@
 
             // Enter
             input.addEventListener("keydown", function (e) {
+                let type =    "";
                 if (e.key === "Enter" && !renameSent) {
                     renameSent = true;
 
                     const val = input.value.trim();
-                    if (val.length === 0) return;
+                    if (val.length === 0) {
+                        comp2.invokeMethodAsync("JsLoadContestsAsync");
+                        return;
+                    }
+                    element.innerHTML = val;
 
-                    DotNet.invokeMethodAsync("Tasks_app", "RequestContestRename", id, column, val);
+                    if (element.id.includes("name"))
+                        type = "name";
+                    if (element.id.includes("year"))
+                        type = "year";
+
+                    comp2.invokeMethodAsync("RequestContestRename", id, val, type);
                 }
             });
 
@@ -86,29 +108,28 @@
 
                 if (!document.body.contains(input)) return;
                 if (renameSent) return;
+
                 renameSent = true;
 
                 const val = input.value.trim();
                 if (val.length === 0) return;
 
-                DotNet.invokeMethodAsync("Tasks_app", "RequestContestRename", id, column, val);
+                comp2.invokeMethodAsync("RequestContestRename", id, val);
             });
 
         });
     },
 
     // =====================
-    //  ПРИВЯЗКА К ID (КАК У ТЕГОВ)
+    //   ПРИВЯЗКА К ID
     // =====================
     bindRowEventsById: function (id) {
-
         const name = document.getElementById(`contest-name-${id}`);
         const year = document.getElementById(`contest-year-${id}`);
-
         if (name)
-            window.ContestsInterop.bindRowEvents(name, id, "name_contest");
-
+            window.ContestsInterop.bindRowEvents(name, id);
         if (year)
-            window.ContestsInterop.bindRowEvents(year, id, "year_contest");
+            window.ContestsInterop.bindRowEvents(year, id);
     }
+
 };

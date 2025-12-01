@@ -68,13 +68,13 @@ window.TagsInterop = {
             const old = element.querySelector("input");
             if (old)
                 old.remove();
-
+            
             const currentValue = element.innerText.trim();
 
             const input = document.createElement("input");
             input.value = currentValue;
             input.style.width = "100%";
-
+            
             element.innerHTML = "";
             element.appendChild(input);
             input.focus();
@@ -88,7 +88,9 @@ window.TagsInterop = {
 
                     const val = input.value.trim();
                     if (val.length === 0) return;
-
+                    
+                    element.innerHTML = val;
+                    
                     comp.invokeMethodAsync("RequestTagRename", id, val);
                 }
             });

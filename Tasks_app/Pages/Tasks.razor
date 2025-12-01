@@ -82,15 +82,15 @@
                 {
                     <tr @key="t.IdTask">
                         <td id="task-name-@t.IdTask">@t.Name</td>
-                        <td>@t.Statement</td>
-                        <td>@t.SolutionIdea</td>
-                        <td>@t.PolygonUrl</td>
-                        <td>@t.IsPreparedCF</td>
-                        <td>@t.IsPreparedYandex</td>
-                        <td>@t.Difficulty</td>
-                        <td>@t.Notes</td>
-                        <td>@(string.IsNullOrEmpty(t.Tags) ? "—" : t.Tags)</td>
-                        <td>@(string.IsNullOrEmpty(t.Contexts) ? "—" : t.Contexts)</td>
+                        <td id="task-statement-@t.IdTask">@t.Statement</td>
+                        <td id="task-solutionIdea-@t.IdTask">@t.SolutionIdea</td>
+                        <td id="task-polygonUrl-@t.IdTask">@t.PolygonUrl</td>
+                        <td id="task-isPreparedCF-@t.IdTask">@t.IsPreparedCF</td>
+                        <td id="task-isPreparedYandex-@t.IdTask">@t.IsPreparedYandex</td>
+                        <td id="task-difficulty-@t.IdTask">@t.Difficulty</td>
+                        <td id="task-notes-@t.IdTask">@t.Notes</td>
+                        <td id="task-tag-@t.IdTask">@(string.IsNullOrEmpty(t.Tags) ? "—" : t.Tags)</td>
+                        <td id="task-contest-@t.IdTask">@(string.IsNullOrEmpty(t.Contexts) ? "—" : t.Contexts)</td>
 
                     </tr>
                 }
@@ -182,49 +182,50 @@
 
     private DotNetObjectReference<Tasks> selfObj; // ссылка на компонент для JS
 
-    private NewTaskModel NewTask = new();         // модель новой задачи
-    private HashSet<int> SelectedTags = new();    // выбранные теги (IdTag)
+    private NewTaskModel NewTask = new(); // модель новой задачи
+    private HashSet<int> SelectedTags = new(); // выбранные теги (IdTag)
 
     public class NewTaskModel
     {
-        public string Name { get; set; } = "";           // название задачи
-        public string Statement { get; set; } = "";      // условие
-        public string SolutionIdea { get; set; } = "";   // идея решения
-        public string PolygonUrl { get; set; } = "";     // ссылка на polygon
-        public bool IsCF { get; set; }                   // подготовлена для CF
-        public bool IsYandex { get; set; }               // подготовлена для Yandex
-        public int Difficulty { get; set; }              // сложность 1-10
-        public string Notes { get; set; } = "";          // примечание
-        public int IdContext { get; set; }               // выбранный контест
+        public string Name { get; set; } = ""; // название задачи
+        public string Statement { get; set; } = ""; // условие
+        public string SolutionIdea { get; set; } = ""; // идея решения
+        public string PolygonUrl { get; set; } = ""; // ссылка на polygon
+        public bool IsCF { get; set; } // подготовлена для CF
+        public bool IsYandex { get; set; } // подготовлена для Yandex
+        public int Difficulty { get; set; } // сложность 1-10
+        public string Notes { get; set; } = ""; // примечание
+        public int IdContext { get; set; } // выбранный контест
     }
 
     public class TaskItem
     {
-        public int IdTask { get; set; }                  // ID задачи
-        public string Name { get; set; } = "";           // название
-        public string Statement { get; set; } = "";      // условие
-        public string SolutionIdea { get; set; } = "";   // идея
-        public string PolygonUrl { get; set; } = "";     // polygon URL
-        public bool IsPreparedCF { get; set; }           // подготовлено CF
-        public bool IsPreparedYandex { get; set; }       // подготовлено Yandex
-        public int? Difficulty { get; set; }             // сложность
-        public string Notes { get; set; } = "";          // заметки
-        public string Tags { get; set; } = "";           // перечисление тегов
+        public int IdTask { get; set; } // ID задачи
+        public string Name { get; set; } = ""; // название
+        public string Statement { get; set; } = ""; // условие
+        public string SolutionIdea { get; set; } = ""; // идея
+        public string PolygonUrl { get; set; } = ""; // polygon URL
+        public bool IsPreparedCF { get; set; } // подготовлено CF
+        public bool IsPreparedYandex { get; set; } // подготовлено Yandex
+        public int? Difficulty { get; set; } // сложность
+        public string Notes { get; set; } = ""; // заметки
+        public string Tags { get; set; } = ""; // перечисление тегов
         public string Contexts { get; set; } = "";
 
     }
 
     public class TagRef
     {
-        public int IdTag { get; set; }                   // ID тега
-        public string Name { get; set; } = "";           // название тега
+        public int IdTag { get; set; } // ID тега
+        public string Name { get; set; } = ""; // название тега
     }
 
     public class ContestRef
     {
-        public int IdContest { get; set; }               // ID контеста
-        public string Name { get; set; } = "";           // название контеста
+        public int IdContest { get; set; } // ID контеста
+        public string Name { get; set; } = ""; // название контеста
     }
+
     private void OnContextToggle(int ctxId, bool isChecked)
     {
         if (isChecked)
@@ -233,9 +234,10 @@
             SelectedContexts.Remove(ctxId);
     }
 
-    private List<TagRef> Tags = new();                   // список доступных тегов
-    private List<ContestRef> Contests = new();           // список контестов
-    private List<TaskItem>? Tasks_;                      // текущие задачи
+    private List<TagRef> Tags = new(); // список доступных тегов
+    private List<ContestRef> Contests = new(); // список контестов
+    private List<TaskItem>? Tasks_; // текущие задачи
+
     private async Task SavePdf()
     {
         if (Tasks_ == null || Tasks_.Count == 0)
@@ -274,6 +276,7 @@
 
         await JS.InvokeVoidAsync("downloadFile", "report.pdf", base64);
     }
+
     public Tasks()
     {
         QuestPDF.Settings.License = LicenseType.Community;
@@ -348,9 +351,10 @@
     // -----------------------------
     protected override async Task OnInitializedAsync()
     {
-        await LoadRefsAsync();   // загрузка тегов и контестов
-        await LoadTasksAsync();  // загрузка задач
+        await LoadRefsAsync(); // загрузка тегов и контестов
+        await LoadTasksAsync(); // загрузка задач
     }
+
     private async Task ApplyFilters()
     {
         await LoadTasksAsync(); // перезагружаем задачи
@@ -360,7 +364,7 @@
         {
             string f = FilterText.ToLower();
             Tasks_ = Tasks_.Where(t =>
-                   (t.Name?.ToLower().Contains(f) ?? false)
+                (t.Name?.ToLower().Contains(f) ?? false)
                 || (t.Statement?.ToLower().Contains(f) ?? false)
             ).ToList();
         }
@@ -381,7 +385,7 @@
         {
             var name = Contests.First(x => x.IdContest == FilterContext).Name;
             Tasks_ = Tasks_.Where(t =>
-                   !string.IsNullOrEmpty(t.Contexts)
+                !string.IsNullOrEmpty(t.Contexts)
                 && t.Contexts.Split(", ").Contains(name)
             ).ToList();
 
@@ -395,7 +399,7 @@
         FilterText = "";
         FilterTag = 0;
         FilterContext = 0;
-        await LoadTasksAsync();     // полный список
+        await LoadTasksAsync(); // полный список
         StateHasChanged();
     }
 
@@ -404,39 +408,39 @@
     // -----------------------------
     private async Task LoadRefsAsync()
     {
-        using var conn = Db.GetConnection();   // создаём подключение
-        await conn.OpenAsync();                // открываем подключение
+        using var conn = Db.GetConnection(); // создаём подключение
+        await conn.OpenAsync(); // открываем подключение
 
         // TAGS
         {
             string sql = "SELECT id_tag, name_tag FROM tags ORDER BY name_tag"; // SQL для тегов
-            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);                // создаём команду
-            using var r = await cmd.ExecuteReaderAsync();                       // выполняем запрос
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn); // создаём команду
+            using var r = await cmd.ExecuteReaderAsync(); // выполняем запрос
 
-            Tags.Clear();                                                       // очищаем список тегов
-            while (await r.ReadAsync())                                         // читаем строки
+            Tags.Clear(); // очищаем список тегов
+            while (await r.ReadAsync()) // читаем строки
                 Tags.Add(new TagRef
-                    {
-                        IdTag = r.GetInt32(0),                                      // id_tag
-                        Name = r.GetString(1)                                       // name_tag
-                    });
+                {
+                    IdTag = r.GetInt32(0), // id_tag
+                    Name = r.GetString(1) // name_tag
+                });
 
-            r.Close();                                                          // закрываем reader
+            r.Close(); // закрываем reader
         }
 
         // CONTESTS
         {
             string sql = "SELECT id_contest, name_contest FROM contests ORDER BY name_contest"; // SQL для контестов
-            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);                                // команда
-            using var r = await cmd.ExecuteReaderAsync();                                       // reader
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn); // команда
+            using var r = await cmd.ExecuteReaderAsync(); // reader
 
-            Contests.Clear();                                                                   // очищаем список контестов
-            while (await r.ReadAsync())                                                         // читаем строки
+            Contests.Clear(); // очищаем список контестов
+            while (await r.ReadAsync()) // читаем строки
                 Contests.Add(new ContestRef
-                    {
-                        IdContest = r.GetInt32(0),                                                  // id_contest
-                        Name = r.GetString(1)                                                       // name_contest
-                    });
+                {
+                    IdContest = r.GetInt32(0), // id_contest
+                    Name = r.GetString(1) // name_contest
+                });
         }
     }
 
@@ -445,10 +449,10 @@
     // -----------------------------
     private async Task LoadTasksAsync()
     {
-        Tasks_ = new();                                   // создаём список задач
+        Tasks_ = new(); // создаём список задач
 
-        using var conn = Db.GetConnection();              // подключение
-        await conn.OpenAsync();                           // открываем
+        using var conn = Db.GetConnection(); // подключение
+        await conn.OpenAsync(); // открываем
 
         string sql = @"
             SELECT
@@ -471,28 +475,28 @@ LEFT JOIN contests c ON c.id_contest = tc.id_contest
 GROUP BY t.id_task
 ORDER BY t.id_task;
 
-        ";                                                // SQL с агрегацией тегов
+        "; // SQL с агрегацией тегов
 
         using var cmd = new Npgsql.NpgsqlCommand(sql, conn); // команда
-        using var reader = await cmd.ExecuteReaderAsync();   // reader
+        using var reader = await cmd.ExecuteReaderAsync(); // reader
 
-        while (await reader.ReadAsync())                     // читаем строки
+        while (await reader.ReadAsync()) // читаем строки
         {
             Tasks_.Add(new TaskItem
-                {
-                    IdTask = reader.GetInt32(0),                 // id_task
-                    Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                    Statement = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                    SolutionIdea = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    PolygonUrl = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    IsPreparedCF = !reader.IsDBNull(5) && reader.GetBoolean(5),
-                    IsPreparedYandex = !reader.IsDBNull(6) && reader.GetBoolean(6),
-                    Difficulty = reader.IsDBNull(7) ? null : reader.GetInt32(7),
-                    Notes = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                    Tags = reader.IsDBNull(9) ? "" : reader.GetString(9),
-                    Contexts = reader.IsDBNull(10) ? "" : reader.GetString(10)
+            {
+                IdTask = reader.GetInt32(0), // id_task
+                Name = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                Statement = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                SolutionIdea = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                PolygonUrl = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                IsPreparedCF = !reader.IsDBNull(5) && reader.GetBoolean(5),
+                IsPreparedYandex = !reader.IsDBNull(6) && reader.GetBoolean(6),
+                Difficulty = reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                Notes = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                Tags = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                Contexts = reader.IsDBNull(10) ? "" : reader.GetString(10)
 
-                });
+            });
         }
     }
 
@@ -501,10 +505,10 @@ ORDER BY t.id_task;
     // -----------------------------
     private void OnTagToggle(int tagId, bool isChecked)
     {
-        if (isChecked)                                     // если включили чекбокс
-            SelectedTags.Add(tagId);                       // добавляем тег
+        if (isChecked) // если включили чекбокс
+            SelectedTags.Add(tagId); // добавляем тег
         else
-            SelectedTags.Remove(tagId);                    // убираем тег
+            SelectedTags.Remove(tagId); // убираем тег
     }
 
     // -----------------------------
@@ -512,8 +516,8 @@ ORDER BY t.id_task;
     // -----------------------------
     private async Task AddTask()
     {
-        using var conn = Db.GetConnection();               // подключение
-        await conn.OpenAsync();                            // открываем
+        using var conn = Db.GetConnection(); // подключение
+        await conn.OpenAsync(); // открываем
 
         string sql = @"
             INSERT INTO tasks
@@ -523,36 +527,37 @@ ORDER BY t.id_task;
             VALUES
             (:n, :st, :si, :p, :cf, :ya, :d, :no, :ctx)
             RETURNING id_task;
-        ";                                                 // SQL вставки задачи
+        "; // SQL вставки задачи
 
-        int newId;                                         // ID новой задачи
+        int newId; // ID новой задачи
 
         using (var cmd = new Npgsql.NpgsqlCommand(sql, conn)) // команда вставки
         {
-            cmd.Parameters.AddWithValue("n", NewTask.Name);                // параметр name
-            cmd.Parameters.AddWithValue("st", NewTask.Statement);          // параметр statement
-            cmd.Parameters.AddWithValue("si", NewTask.SolutionIdea);       // параметр solution_idea
-            cmd.Parameters.AddWithValue("p", NewTask.PolygonUrl);          // параметр polygon_url
-            cmd.Parameters.AddWithValue("cf", NewTask.IsCF);               // параметр CF
-            cmd.Parameters.AddWithValue("ya", NewTask.IsYandex);           // параметр Yandex
-            cmd.Parameters.AddWithValue("d", NewTask.Difficulty);          // параметр difficulty
-            cmd.Parameters.AddWithValue("no", NewTask.Notes);              // параметр notes
+            cmd.Parameters.AddWithValue("n", NewTask.Name); // параметр name
+            cmd.Parameters.AddWithValue("st", NewTask.Statement); // параметр statement
+            cmd.Parameters.AddWithValue("si", NewTask.SolutionIdea); // параметр solution_idea
+            cmd.Parameters.AddWithValue("p", NewTask.PolygonUrl); // параметр polygon_url
+            cmd.Parameters.AddWithValue("cf", NewTask.IsCF); // параметр CF
+            cmd.Parameters.AddWithValue("ya", NewTask.IsYandex); // параметр Yandex
+            cmd.Parameters.AddWithValue("d", NewTask.Difficulty); // параметр difficulty
+            cmd.Parameters.AddWithValue("no", NewTask.Notes); // параметр notes
             cmd.Parameters.AddWithValue("ctx", NewTask.IdContext == 0
-                ? DBNull.Value                                            // если контест не выбран
-                : NewTask.IdContext);                                     // иначе ID контеста
+                ? DBNull.Value // если контест не выбран
+                : NewTask.IdContext); // иначе ID контеста
 
-            newId = Convert.ToInt32(await cmd.ExecuteScalarAsync());      // получаем id_task
+            newId = Convert.ToInt32(await cmd.ExecuteScalarAsync()); // получаем id_task
         }
 
         // Записываем связи с тегами
         foreach (var tagId in SelectedTags)
         {
             string sqlTag = @"INSERT INTO task_tags (id_task, id_tag) VALUES (:t, :g)"; // SQL для task_tags
-            using var tagCmd = new Npgsql.NpgsqlCommand(sqlTag, conn);                  // команда
-            tagCmd.Parameters.AddWithValue("t", newId);                                 // id_task
-            tagCmd.Parameters.AddWithValue("g", tagId);                                 // id_tag
-            await tagCmd.ExecuteNonQueryAsync();                                        // выполняем вставку
+            using var tagCmd = new Npgsql.NpgsqlCommand(sqlTag, conn); // команда
+            tagCmd.Parameters.AddWithValue("t", newId); // id_task
+            tagCmd.Parameters.AddWithValue("g", tagId); // id_tag
+            await tagCmd.ExecuteNonQueryAsync(); // выполняем вставку
         }
+
         // Insert contexts
         foreach (var ctxId in SelectedContexts)
         {
@@ -563,142 +568,237 @@ ORDER BY t.id_task;
             await ctxCmd.ExecuteNonQueryAsync();
         }
 
-        NewTask = new();                                // сбрасываем форму
-        SelectedTags.Clear();                           // очищаем выбранные теги
+        NewTask = new(); // сбрасываем форму
+        SelectedTags.Clear(); // очищаем выбранные теги
 
-        await LoadTasksAsync();                         // перегружаем задачи
-        StateHasChanged();                              // обновляем UI
+        await LoadTasksAsync(); // перегружаем задачи
+        StateHasChanged(); // обновляем UI
     }
 
-    // -----------------------------
-    // DELETE TASK
-    // -----------------------------
-    private async Task DeleteTask(int id)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        System.Diagnostics.Debug.WriteLine("======================================");
-        System.Diagnostics.Debug.WriteLine($"[Tasks] >>> НАЧАТЬ УДАЛЕНИЕ ЗАДАЧИ ID={id}");
-        System.Diagnostics.Debug.WriteLine("======================================");
+        if (Tasks_ == null)
+            return;
 
+        foreach (var t in Tasks_)
+            await JS.InvokeVoidAsync("TasksInterop.bindRowEventsById", t.IdTask);
+        if (firstRender)
+        {
+            selfObj = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("TasksInterop.setComponent", selfObj);
+        }
+
+    }
+
+    // ---------- JS CALLBACKS -----------
+
+    private bool IsEditing = false;
+
+    [JSInvokable]
+    public void StartEdit()
+    {
+        IsEditing = true;
+    }
+
+    [JSInvokable]
+    public async Task RequestTaskDelete(int id)
+    {
+        if (Admin.IsAdmin)
+            await DeleteTask(id);
+    }
+
+    [JSInvokable]
+    public async Task RequestTaskRename(int id, string newElem, string type)
+    {
+        if (Admin.IsAdmin)
+            await RenameTask(id, newElem, GetRenameTaskType(type));
+    }
+
+    [JSInvokable]
+    public async Task JsLoadTasksAsync()
+    {
+        if (Admin.IsAdmin)
+            await LoadTasksAsync();
+    }
+
+
+    // ---------- RENAME ----------
+
+    public enum RenameTaskType
+    {
+        Name,
+        Statement,
+        SolutionIdea,
+        PolygonUrl,
+        IsPreparedCf,
+        IsPreparedYandex,
+        Difficulty,
+        Notes
+        //Tag,
+        //Contest
+
+    }
+
+    private RenameTaskType GetRenameTaskType(string type)
+    {
+        return type switch
+        {
+            "name" => RenameTaskType.Name,
+            "statement" => RenameTaskType.Statement,
+            "solutionIdea" => RenameTaskType.SolutionIdea,
+            "polygonUrl" => RenameTaskType.PolygonUrl,
+            "isPreparedCf" => RenameTaskType.IsPreparedCf,
+            "isPreparedYandex" => RenameTaskType.IsPreparedYandex,
+            "difficulty" => RenameTaskType.Difficulty,
+            "notes" => RenameTaskType.Notes,
+            //"tag" => RenameTaskType.Tag,
+            //"contest" => RenameTaskType.Contest,
+            _ => throw new Exception()
+        };
+    }
+
+    public async Task RenameTask(int id, string value, RenameTaskType type)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            await JS.InvokeVoidAsync("alert", "Название не может быть пустым");
+            return;
+        }
+
+        await using var conn = Db.GetConnection();
+        await conn.OpenAsync();
+
+        NpgsqlCommand cmd;
+        switch (type)
+        {
+            case RenameTaskType.Name:
+                var sql = "UPDATE tasks SET name = :name WHERE id_task = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("name", value);
+                break;
+            case RenameTaskType.Statement:
+                sql = "UPDATE tasks SET statement = :statement WHERE id_task = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("statement", value);
+                break;
+            case RenameTaskType.SolutionIdea:
+                sql = "UPDATE tasks SET solution_idea = :solutionIdea WHERE id_task = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("solutionIdea", value);
+                break;
+            case RenameTaskType.PolygonUrl:
+                sql = "UPDATE tasks SET polygon_url = :polygonUrl WHERE id_task = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("polygonUrl", value);
+                break;
+            case RenameTaskType.IsPreparedCf:
+                sql = "UPDATE tasks SET is_prepared_for_codeforces = :isPreparedCf WHERE id_task = :id";
+
+                //bool
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("isPreparedCf", value);
+                break;
+            case RenameTaskType.IsPreparedYandex:
+                sql = "UPDATE tasks SET is_prepared_for_codeforces = :isPreparedYandex WHERE id_task = :id";
+
+                //bool
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("isPreparedYandex", value);
+                break;
+            case RenameTaskType.Difficulty:
+                sql = "UPDATE tasks SET difficulty = :difficulty WHERE id_task = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                int intValue;
+                if (!int.TryParse(value, out intValue))
+                    throw new Exception("Year was not a number!");
+                cmd.Parameters.AddWithValue("difficulty", intValue);
+                break;
+            case RenameTaskType.Notes:
+                sql = "UPDATE tasks SET notes = :notes WHERE id_task = :id";
+
+                cmd = new Npgsql.NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("notes", value);
+                break;
+
+
+            //изменение тегов и контестов по-другому должно быть
+
+
+            /*
+        case RenameTaskType.Tag:
+            sql = "UPDATE tasks SET Tag = :Tag WHERE id_contest = :id";
+
+            cmd = new Npgsql.NpgsqlCommand(sql, conn);
+            if (!int.TryParse(value, out intValue))
+                throw new Exception("Year was not a number!");
+            cmd.Parameters.AddWithValue("Tag", intValue);
+            break;
+        case RenameTaskType.Contest:
+            sql = "UPDATE tasks SET Contest = :Contest WHERE id_contest = :id";
+
+            cmd = new Npgsql.NpgsqlCommand(sql, conn);
+            if (!int.TryParse(value, out intValue))
+                throw new Exception("Year was not a number!");
+            cmd.Parameters.AddWithValue("Contest", intValue);
+            break;
+            */
+            default:
+                throw new Exception();
+        }
+
+        cmd.Parameters.AddWithValue("id", id);
+        await cmd.ExecuteNonQueryAsync();
+
+        IsEditing = false; // ← НОВАЯ СТРОКА
+
+        await LoadTasksAsync();
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    public async Task DeleteTask(int id)
+    {
         try
         {
             using var conn = Db.GetConnection();
             await conn.OpenAsync();
-            System.Diagnostics.Debug.WriteLine("[Tasks] Подключение к БД ОК");
 
-            // ============================
-            // 1) УДАЛЕНИЕ СВЯЗЕЙ С ТЕГАМИ
-            // ============================
+            /*
+            string checkSql = "SELECT COUNT(*) FROM task_contests WHERE id_contest = :id";
 
+            //проверка
+            using var checkCmd = new Npgsql.NpgsqlCommand(checkSql, conn);
+            checkCmd.Parameters.AddWithValue("id", id);
+            int inUse = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
+
+            if (inUse > 0)
             {
-                string sql = "DELETE FROM task_tags WHERE id_task = :id";
-                System.Diagnostics.Debug.WriteLine($"[Tasks] Удаляем связи с тегами: {sql}");
-
-                using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("id", id);
-
-                int rows = await cmd.ExecuteNonQueryAsync();
-                System.Diagnostics.Debug.WriteLine($"[Tasks] Связей tag удалено: {rows}");
+                await JS.InvokeVoidAsync("alert", "Контест используется в задачах. Удаление невозможно.");
+                return;
             }
+            */
 
-            // =================================
-            // 2) УДАЛЕНИЕ СВЯЗЕЙ С КОНТЕСТАМИ
-            // =================================
+            //удаление
+            string sql = "DELETE FROM tasks WHERE id_task = :id";
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("id", id);
+            int rows = await cmd.ExecuteNonQueryAsync();
 
-            {
-                string sql = "DELETE FROM task_contests WHERE id_task = :id";
-                System.Diagnostics.Debug.WriteLine($"[Tasks] Удаляем связи с контестами: {sql}");
-
-                using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("id", id);
-
-                int rows = await cmd.ExecuteNonQueryAsync();
-                System.Diagnostics.Debug.WriteLine($"[Tasks] Связей contests удалено: {rows}");
-            }
-
-            // ============================
-            // 3) УДАЛЕНИЕ САМОЙ ЗАДАЧИ
-            // ============================
-
-            {
-                string sql = "DELETE FROM tasks WHERE id_task = :id";
-                System.Diagnostics.Debug.WriteLine($"[Tasks] Удаляем задачу: {sql}");
-
-                using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("id", id);
-
-                int rows = await cmd.ExecuteNonQueryAsync();
-                System.Diagnostics.Debug.WriteLine($"[Tasks] Задача удалена, затронуто строк: {rows}");
-            }
-
-            // ============================
-            // 4) ОБНОВЛЕНИЕ СПИСКА
-            // ============================
-
-            System.Diagnostics.Debug.WriteLine("[Tasks] Обновляем список задач...");
+            //обновление
             await LoadTasksAsync();
-            StateHasChanged();
-
-            System.Diagnostics.Debug.WriteLine("======================================");
-            System.Diagnostics.Debug.WriteLine($"[Tasks] >>> УДАЛЕНИЕ ЗАДАЧИ ID={id} ЗАВЕРШЕНО");
-            System.Diagnostics.Debug.WriteLine("======================================");
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            System.Diagnostics.Debug.WriteLine("[Tasks] ОШИБКА ПРИ УДАЛЕНИИ ЗАДАЧИ");
-            System.Diagnostics.Debug.WriteLine($"[Tasks] Тип: {ex.GetType()}");
-            System.Diagnostics.Debug.WriteLine($"[Tasks] Сообщение: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[Tasks] StackTrace: {ex.StackTrace}");
-            System.Diagnostics.Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
+            System.Diagnostics.Debug.WriteLine(ex.Message);
             throw;
         }
     }
 
-
-
-
-    // -----------------------------
-    // JS CALLBACKS
-    // -----------------------------
-    [JSInvokable]
-    public async Task RequestTaskDelete(int id) => await DeleteTask(id); // JS → C#: удалить задачу
-
-    [JSInvokable]
-    public async Task RequestTaskRename(int id, string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))          // если пустое имя
-            return;                                   // выходим
-
-        using var conn = Db.GetConnection();          // подключение
-        await conn.OpenAsync();                       // открываем
-
-        string sql = @"UPDATE tasks SET name = :n WHERE id_task = :id"; // SQL обновления названия
-
-        using var cmd = new Npgsql.NpgsqlCommand(sql, conn);           // команда
-        cmd.Parameters.AddWithValue("n", name);                        // новое имя
-        cmd.Parameters.AddWithValue("id", id);                         // id_task
-        await cmd.ExecuteNonQueryAsync();                              // выполняем
-
-        await LoadTasksAsync();                                       // перегружаем задачи
-        StateHasChanged();                                            // обновляем UI
-    }
-
-    // -----------------------------
-    // JS INIT (привязка событий к строкам)
-    // -----------------------------
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Tasks_ == null)                          // если задач нет
-            return;                                  // выходим
-
-        foreach (var t in Tasks_)                    // для каждой задачи
-            await JS.InvokeVoidAsync("TasksInterop.bindRowEventsById", t.IdTask); // привязка JS-событий
-
-        if (firstRender)                             // только при первом рендере
-        {
-            selfObj = DotNetObjectReference.Create(this);            // создаём ссылку на компонент
-            await JS.InvokeVoidAsync("TasksInterop.setComponent", selfObj); // передаём её в JS
-        }
-    }
 }
+
