@@ -1,17 +1,17 @@
 ﻿using Npgsql;
 
-    public class Database
+public class Database
+{
+    private readonly string _connStr;
+
+    public Database(IConfiguration config)
     {
-        private readonly IConfiguration _config;
-
-        public Database(IConfiguration config)
-        {
-            _config = config;
-        }
-
-        public NpgsqlConnection GetConnection()
-        {
-            string connStr = "Host=185.225.202.224;Port=5432;Database=db_tasks;Username=postgres;Password=Orhedeya0000;";
-            return new NpgsqlConnection(connStr);
-        }
+        // Читаем строку подключения из переменной окружения systemd
+        _connStr = Environment.GetEnvironmentVariable("DB_CONN");
     }
+
+    public NpgsqlConnection GetConnection()
+    {
+        return new NpgsqlConnection(_connStr);   // создаём подключение
+    }
+}

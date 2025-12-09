@@ -52,7 +52,7 @@
     private bool Success_enter = false;
     private async Task Login_()
     {
-        AdminState.LoginAdmin();
+        // AdminState.LoginAdmin();
         string hash = ComputeSha256(Password);
 
         using var conn = Db.GetConnection();
