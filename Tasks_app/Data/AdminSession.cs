@@ -1,13 +1,13 @@
 ﻿public class AdminSession
 {
-    public bool IsAdmin { get; private set; } = false; // флаг администратора
+    public bool IsAdmin { get; private set; } = false;
 
-    public void LoginAdmin() // включаем режим админа
+    public void LoginAdmin()
     {
         IsAdmin = true;
     }
 
-    public void Logout() // выходим
+    public void Logout()
     {
         IsAdmin = false;
     }

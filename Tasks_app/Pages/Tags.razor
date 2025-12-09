@@ -17,6 +17,24 @@
     }
     else
     {
+        <div class="filters-row">
+
+            <div class="filter-block">
+                <label class="filter-label">Поиск</label>
+                <input @bind="FilterName"
+                       type="text"
+                       placeholder="Название тега"
+                       class="filter-input filter-name" />
+
+            </div>
+
+            <div class="filter-buttons">
+                <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
+                <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
+            </div>
+
+        </div>
+        
         <table class="x-table">
             <thead>
                 <tr>
@@ -80,14 +98,13 @@
     private DotNetObjectReference<Tags> selfObj;
 
     private bool IsEditing = false;
+    private string FilterName = "";
 
     private static Tags Instance;
 
     protected override void OnInitialized()
     {
         Instance = this;
-        System.Diagnostics.Debug.WriteLine($"[Tags] FULLNAME: {typeof(Tags).FullName}");
-        System.Diagnostics.Debug.WriteLine("[Tags] Страница инициализирована");
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -105,9 +122,27 @@
 
     }
     
+    private async Task ApplyFilters()
+    {
+        await LoadTagsAsync();
 
-    // ---------- JS CALLBACKS -----------
+        if (!string.IsNullOrWhiteSpace(FilterName))
+        {
+            string f = FilterName.ToLower();
+            Tags_ = Tags_.Where(t =>
+                (t.NameTag?.ToLower().Contains(f) ?? false)).ToList();
+        }
+        StateHasChanged();
+    }
 
+    private async Task ResetFilters()
+    {
+        FilterName = "";
+        await LoadTagsAsync();
+        StateHasChanged();
+    }
+
+    //JS
     [JSInvokable]
     public void StartEdit()
     {
@@ -129,15 +164,12 @@
     }
 
 
-    // ---------- RENAME ----------
-
+    //переименование
+    
     public async Task RenameTag(int id, string name)
     {
-        System.Diagnostics.Debug.WriteLine($"[Tags] RenameTag вызван. ID={id}, RAW='{name}'");
-
         if (string.IsNullOrWhiteSpace(name))
         {
-            System.Diagnostics.Debug.WriteLine("[Tags] Пустое имя — отмена");
             await JS.InvokeVoidAsync("alert", "Название не может быть пустым");
             return;
         }
@@ -146,105 +178,64 @@
         await conn.OpenAsync();
 
         string sql = "UPDATE tags SET name_tag = :name WHERE id_tag = :id";
-        System.Diagnostics.Debug.WriteLine($"[Tags] SQL UPDATE: {sql}");
 
         using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("name", name);
         cmd.Parameters.AddWithValue("id", id);
         await cmd.ExecuteNonQueryAsync();
-        System.Diagnostics.Debug.WriteLine("[Tags] SQL UPDATE выполнен");
 
-        IsEditing = false;  // ← НОВАЯ СТРОКА
-        System.Diagnostics.Debug.WriteLine("[Tags] EDIT MODE = OFF");
-
+        IsEditing = false;
+        
         await LoadTagsAsync();
         await InvokeAsync(StateHasChanged);
 
     }
 
-    // ---------- DELETE ----------
-
+    //удаление
     public async Task DeleteTag(int id)
     {
-        System.Diagnostics.Debug.WriteLine("======================================");
-        System.Diagnostics.Debug.WriteLine($"[Tags] >>> НАЧАТЬ УДАЛЕНИЕ ТЕГА ID={id}");
-        System.Diagnostics.Debug.WriteLine("======================================");
-
         try
         {
+            //проверка
             using var conn = Db.GetConnection();
             await conn.OpenAsync();
-            System.Diagnostics.Debug.WriteLine("[Tags] Подключение к БД ОК");
-
-            // ============================
-            //  ПРОВЕРКА ИСПОЛЬЗОВАНИЯ ТЕГА
-            // ============================
-
             string checkSql = "SELECT COUNT(*) FROM task_tags WHERE id_tag = :id";
-            System.Diagnostics.Debug.WriteLine($"[Tags] SQL CHECK = {checkSql}");
 
             using var checkCmd = new Npgsql.NpgsqlCommand(checkSql, conn);
             checkCmd.Parameters.AddWithValue("id", id);
 
             int inUse = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
-            System.Diagnostics.Debug.WriteLine($"[Tags] Связей найдено: {inUse}");
 
             if (inUse > 0)
             {
-                System.Diagnostics.Debug.WriteLine("[Tags] Удаление запрещено — тег используется");
                 await JS.InvokeVoidAsync("alert", "Тег используется в задачах. Удаление невозможно.");
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine("[Tags] Тег НЕ используется — можно удалять");
-
-            // ============================
-            //  УДАЛЕНИЕ ТЕГА
-            // ============================
-
+            //удаление
             string sql = "DELETE FROM tags WHERE id_tag = :id";
-            System.Diagnostics.Debug.WriteLine($"[Tags] SQL DELETE = {sql}");
 
             using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("id", id);
 
             int rows = await cmd.ExecuteNonQueryAsync();
-            System.Diagnostics.Debug.WriteLine($"[Tags] SQL DELETE выполнен. Затронуто строк: {rows}");
-
-            // ============================
-            //  ОБНОВЛЕНИЕ СПИСКА
-            // ============================
-
-            System.Diagnostics.Debug.WriteLine("[Tags] Перезагружаем список тегов...");
+            
             await LoadTagsAsync();
             await InvokeAsync(StateHasChanged);
-
-            System.Diagnostics.Debug.WriteLine("======================================");
-            System.Diagnostics.Debug.WriteLine($"[Tags] >>> УДАЛЕНИЕ ТЕГА ID={id} ЗАВЕРШЕНО");
-            System.Diagnostics.Debug.WriteLine("======================================");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            System.Diagnostics.Debug.WriteLine("[Tags] ОШИБКА ПРИ УДАЛЕНИИ ТЕГА");
-            System.Diagnostics.Debug.WriteLine($"[Tags] Тип: {ex.GetType()}");
-            System.Diagnostics.Debug.WriteLine($"[Tags] Сообщение: {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[Tags] StackTrace: {ex.StackTrace}");
-            System.Diagnostics.Debug.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
+            System.Diagnostics.Debug.WriteLine(ex.Message);
             throw;
         }
     }
 
-
-    // ---------- LOAD ----------
-
+    //инициализация
     private List<TagItem>? Tags_;
     private string tagInput;
 
     protected override async Task OnInitializedAsync()
     {
-        System.Diagnostics.Debug.WriteLine("[Tags] OnInitializedAsync → Загрузка тегов");
         await LoadTagsAsync();
     }
 
@@ -252,7 +243,6 @@
     {
         if (IsEditing)
         {
-            System.Diagnostics.Debug.WriteLine("[Tags] LoadTagsAsync пропущен — идёт редактирование");
             return;
         }
 
@@ -273,19 +263,13 @@
                     NameTag = reader.GetString(1)
                 });
         }
-
-        System.Diagnostics.Debug.WriteLine($"[Tags] Загружено тегов: {Tags_.Count}");
     }
-
-    // ---------- ADD ----------
-
+    
+    //добавление
     private async Task TagsAdd()
     {
-        System.Diagnostics.Debug.WriteLine($"[Tags] Добавление '{tagInput}'");
-
         if (string.IsNullOrWhiteSpace(tagInput))
         {
-            System.Diagnostics.Debug.WriteLine("[Tags] Ошибка: пустое имя");
             return;
         }
 
@@ -297,14 +281,10 @@
         cmd.Parameters.AddWithValue("name", tagInput);
 
         await cmd.ExecuteNonQueryAsync();
-        System.Diagnostics.Debug.WriteLine("[Tags] SQL INSERT выполнен");
-
         await LoadTagsAsync();
         tagInput = "";
     }
-
-    // ---------- MODEL ----------
-
+    
     public class TagItem
     {
         public int IdTag { get; set; }
