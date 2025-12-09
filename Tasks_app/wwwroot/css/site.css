@@ -84,7 +84,6 @@ body {
     margin-left: auto;
     margin-right: auto;
     padding: 40px 30px;
-
     display: flex;
     flex-direction: column;
     gap: 40px;
@@ -169,7 +168,7 @@ body {
             color: #fff;
         }
 
-        
+
 .desktop-only {
     display: flex;
     gap: 28px;
@@ -204,7 +203,7 @@ body {
             background: rgba(255,255,255,0.1);
             color: #fff;
         }
-        
+
 .filters-panel {
     padding: 16px 20px;
     background: rgba(255,255,255,0.04);
@@ -213,8 +212,10 @@ body {
     backdrop-filter: blur(12px);
     margin-bottom: 26px;
     max-width: 1200px !important;
-    margin-left: auto; 
+    margin-left: auto;
     margin-right: auto;
+    position: relative; /* комбобокс будет привязан к панели */
+    z-index: 2; /* панель выше таблицы */
 }
 
 .filters-row {
@@ -230,14 +231,12 @@ body {
     flex-direction: column;
     gap: 6px;
     max-width: 100%;
-
 }
 
 .filter-label {
     font-size: 16px;
     color: var(--grey-200);
     font-weight: var(--fw-medium);
-
 }
 
 .filter-input {
@@ -276,16 +275,114 @@ body {
         border-radius: 10px;
         flex: 1;
     }
-    
+
 .filter-name,
 .filter-statement {
     max-width: 260px;
     width: 100%;
 }
+
 .filters-panel .filter-input {
     width: auto !important;
     max-width: 260px;
 }
+.filter-block.tags-filter {
+    position: relative; /* якорь для absolute-дропдауна */
+/*    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;*/
+}
+
+/* Кнопка-комбобокс */
+.combo-multi {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--grey-200);
+    font-size: 16px;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+    .combo-multi:hover {
+        background: rgba(255,255,255,0.08);
+    }
+
+    .combo-multi .arrow {
+        opacity: 0.6;
+    }
+
+/* Выпадающий список — ПОВЕРХ таблицы */
+.combo-dropdown {
+    position: absolute; /* привязан к .tags-filter */
+    top: calc(100% + 4px); /* сразу под кнопкой */
+    left: 0;
+    width: 100%;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 10px;
+    background: rgb(28, 28, 30);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.8);
+    z-index: 10000; /* гарантированно выше таблицы */
+    box-sizing: border-box;
+}
+
+/* Строка с чекбоксом – выровнена влево, на всю ширину */
+.combo-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* выравнивание по левому краю */
+    gap: 8px;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--grey-200);
+    white-space: nowrap;
+    width: 100%;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+    .combo-item span {
+        flex: 1; /* текст растягивается, но остаётся слева */
+    }
+
+    .combo-item:hover {
+        background: rgba(255,255,255,0.08);
+        border-radius: 6px;
+    }
+
+    /* Чекбокс */
+    .combo-item input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--grey-200);
+    }
+
+/* Кнопка "Готово" внизу списка */
+.close-drop {
+    margin-top: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: var(--grey-50);
+    font-size: 15px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+    .close-drop:hover {
+        background: rgba(255,255,255,0.12);
+    }
 
 
 @media (max-width: 768px) {
@@ -363,22 +460,23 @@ body {
     border: 1px solid rgba(255,255,255,0.06);
     backdrop-filter: blur(14px);
     transition: 0.3s;
-    /* анимация при скролле */
     opacity: 0;
     transform: translateY(40px);
     transition: opacity 0.6s var(--ease-1), transform 0.6s var(--ease-1), background 0.3s var(--ease-1), box-shadow 0.3s var(--ease-1);
 }
+
     .x-feature.visible {
         opacity: 1 !important;
         transform: translateY(0) !important;
     }
-    
+
     .x-feature:hover {
         background: rgba(255,255,255,0.08);
         transform: translateY(-6px);
         box-shadow: 0 10px 30px rgba(0,0,0,.35);
         border-color: rgba(255,255,255,0.15);
     }
+
     .x-feature h3 {
         font-size: var(--fs-h3);
         font-weight: var(--fw-bold);
@@ -389,7 +487,7 @@ body {
         font-size: var(--fs-body);
         color: var(--grey-150);
     }
-    
+
 .x-nav-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
@@ -407,18 +505,16 @@ body {
     border-radius: 18px;
     backdrop-filter: blur(12px);
     text-decoration: none;
-    /* анимации */
     opacity: 0;
     transform: translateY(40px);
     transition: opacity 0.6s var(--ease-1), transform 0.6s var(--ease-1), background 0.25s var(--ease-1), border-color 0.25s var(--ease-1), box-shadow 0.25s var(--ease-1);
 }
 
-    /* прокрутка */
     .x-nav-btn.visible {
         opacity: 1 !important;
         transform: translateY(0) !important;
     }
-    
+
     .x-nav-btn:hover {
         background: rgba(255,255,255,0.10);
         border-color: rgba(255,255,255,0.20);
@@ -457,7 +553,7 @@ body {
         color: var(--grey-50);
         border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-    
+
     .x-table td {
         padding: 14px 16px;
         font-size: var(--fs-table);
@@ -466,7 +562,7 @@ body {
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
-    
+
     .x-table tr:last-child td {
         border-bottom: none;
     }
@@ -475,6 +571,7 @@ body {
         background: rgba(255,255,255,0.08);
         transition: 0.25s ease;
     }
+
 .table-scroll {
     width: 100%;
     overflow-x: auto;
@@ -526,6 +623,7 @@ button {
     min-height: calc(100vh - 120px);
     padding: 40px;
 }
+
 .login-form {
     width: 100%;
     max-width: 520px;
@@ -549,7 +647,7 @@ button {
         width: 100%;
         margin: 0;
     }
-    
+
     .login-form label {
         font-size: var(--fs-body);
         font-weight: var(--fw-semibold);
@@ -557,7 +655,7 @@ button {
         width: 100%;
         margin: 0;
     }
-    
+
     .login-form input {
         height: 64px;
         padding: 0 18px;
@@ -565,7 +663,7 @@ button {
         width: 100%;
         box-sizing: border-box;
     }
-    
+
     .login-form button {
         height: 64px;
         width: 100%;
@@ -579,6 +677,7 @@ button {
         font-size: var(--fs-body);
         margin: 0;
     }
+
 .tag-add {
     display: flex;
     flex-direction: row;
@@ -607,11 +706,12 @@ button {
     }
 
     .tag-add button {
-        height : 56px;
+        height: 56px;
         padding: 0 22px;
         font-size: var(--fs-button);
         white-space: nowrap;
     }
+
 .x-select {
     position: relative;
     height: 56px;
@@ -640,7 +740,7 @@ button {
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: rgba(255,255,255,0.06); 
+    background: rgba(255,255,255,0.06);
     backdrop-filter: blur(12px);
     border: 1px solid var(--surface-border);
     border-radius: var(--r-md);
@@ -666,28 +766,23 @@ button {
     background: rgba(0,0,0,0.55);
     backdrop-filter: blur(18px);
     z-index: 9999;
-
     align-items: center;
     justify-content: center;
 }
 
-#tag-delete-dialog.open {
-    display: flex;
-}
+    #tag-delete-dialog.open {
+        display: flex;
+    }
 
-/* окно */
 .tag-dialog-box {
     background: var(--surface);
     border: 1px solid var(--surface-border);
     backdrop-filter: blur(22px);
-
     width: 320px;
     padding: 28px 26px;
     border-radius: var(--r-lg);
-
     text-align: center;
     font-family: var(--font-main);
-
     box-shadow: 0 14px 42px rgba(0,0,0,0.55);
     animation: fadeUpDialog 0.22s var(--ease-1);
 }
@@ -722,7 +817,7 @@ button {
         background: linear-gradient(90deg, #6d3232, #7a2929);
         border-color: rgba(200, 80, 80, 0.35);
     }
-    
+
 #tag-del-no {
     flex: 1;
     padding: 14px 0;
@@ -741,12 +836,127 @@ button {
         transform: translateY(-2px);
     }
 
-/* анимация */
+.task-add {
+    width: 100%;
+    max-width: 620px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--r-lg);
+    padding: 48px 40px;
+    margin: 30px auto;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    text-align: center;
+}
+
+    .task-add label {
+        font-size: var(--fs-body);
+        font-weight: var(--fw-semibold);
+        color: var(--grey-200);
+        width: 100%;
+        text-align: left;
+    }
+
+    .task-add input[type="text"],
+    .task-add input[type="number"],
+    .task-add textarea {
+        width: 100%;
+        padding: 14px 18px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--r-md);
+        font-size: var(--fs-body);
+        color: var(--grey-50);
+        transition: 0.25s;
+    }
+
+        .task-add input:focus,
+        .task-add textarea:focus {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--grey-200);
+        }
+
+    .task-add textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .task-add > div[style*="flex"] label {
+        width: auto;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+.task-tags-list,
+.task-contexts-list {
+    width: 100%;
+    padding: 16px;
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--r-md);
+    border: 1px solid var(--surface-border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+    .task-tags-list label,
+    .task-contexts-list label {
+        font-size: var(--fs-table);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+.task-add button {
+    width: 100%;
+    height: 60px;
+    font-size: var(--fs-button);
+    font-weight: var(--fw-bold);
+    margin-top: 10px;
+}
+
+    .task-add button:hover {
+        transform: translateY(-2px);
+    }
+.task-add .combo-wrapper {
+    position: relative; /* якорь для дропдауна */
+    width: 100%; /* на всю ширину формы */
+    margin-bottom: 16px; /* небольшой отступ вниз */
+    box-sizing: border-box; /* чтобы padding не ломал ширину */
+}
+.task-add .combo-dropdown {
+    position: absolute; /* привязан к .combo-wrapper */
+    top: calc(100% + 4px); /* прямо под "кнопкой" */
+    left: 0;
+    width: 100%; /* такая же ширина, как у поля */
+    box-sizing: border-box;
+    z-index: 10000; /* поверх всего содержимого формы */
+}
+
+/* Кнопка-комбобокс в форме задачи */
+.task-add .combo-multi {
+    font-size: 18px; /* здесь размер текста кнопки */
+    padding: 12px 16px; /* чуть повыше, чтобы не выглядело тесно */
+}
+
+/* Пункты внутри выпадающего списка */
+.task-add .combo-dropdown .combo-item span {
+    font-size: 18px; /* размер текста тегов/контекстов */
+}
 @keyframes fadeUpDialog {
     from {
         opacity: 0;
         transform: translateY(14px) scale(0.96);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -767,7 +977,7 @@ button {
     #contest-delete-dialog.open {
         display: flex;
     }
-    
+
 #contest-del-yes {
     flex: 1;
     padding: 14px 0;
@@ -805,7 +1015,65 @@ button {
         transform: translateY(-2px);
     }
 
+
+
+
 @media (max-width: 768px) {
+
+    .nav-links {
+        display: flex;
+        gap: 28px;
+        font-size: 16px !important;
+    }
+    .task-add {
+        padding: 20px !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+        gap: 18px !important;
+        text-align: left !important;
+    }
+        .task-add * {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            font-size: 16px !important;
+            overflow-x: hidden !important;
+        }
+        .task-add input,
+        .task-add textarea,
+        .task-add select {
+            padding: 10px 14px !important;
+            font-size: 16px !important;
+        }
+
+        .task-add textarea {
+            min-height: 90px !important;
+        }
+
+        .task-add label {
+            font-size: 16px !important;
+            margin-bottom: 4px !important;
+        }
+
+    .task-tags-list,
+    .task-contexts-list {
+        padding: 12px !important;
+        gap: 10px !important;
+    }
+
+        .task-tags-list label,
+        .task-contexts-list label {
+            font-size: 15px !important;
+        }
+
+    .task-add button {
+        height: 52px !important;
+        font-size: 18px !important;
+        margin-top: 6px !important;
+    }
+
     .nav-wrapper {
         height: 64px;
         padding: 12px 16px;
@@ -815,13 +1083,13 @@ button {
         min-height: 52px;
         padding: 0 18px;
     }
-    
+
     .x-feature {
         background: rgba(255,255,255,0.12) !important;
         border-color: rgba(255,255,255,0.18) !important;
         backdrop-filter: blur(18px);
     }
-    
+
         .x-feature:hover {
             background: rgba(255,255,255,0.16) !important;
             transform: none;
@@ -837,18 +1105,20 @@ button {
         font-size: 20px;
         padding: 12px 16px;
     }
+
     .x-select {
         box-sizing: border-box;
         padding-left: 20px;
         padding-right: 20px;
         padding-bottom: 0;
-
     }
+
     .x-select-list {
         box-sizing: border-box;
         padding: 20px 20px 0 20px;
         margin-bottom: 0;
     }
+
     .tag-add {
         flex-direction: column;
         gap: 18px;
@@ -859,7 +1129,7 @@ button {
     }
 
         .tag-add input,
-        .tag-add button{
+        .tag-add button {
             width: 100%;
             height: 70px;
             font-size: 20px;
@@ -880,11 +1150,11 @@ button {
         padding-right: 16px;
         padding-top: 16px;
     }
+
     .x-hero,
     .x-section,
-    .x-nav-grid{
+    .x-nav-grid {
         padding: 0px 0px 0px;
-
     }
 
     .x-hero-title {
@@ -898,7 +1168,7 @@ button {
     .hero-illustration {
         border-radius: 12px;
     }
-    
+
     .x-sec-title {
         font-size: 28px;
     }
@@ -910,7 +1180,7 @@ button {
     .x-feature p {
         font-size: 18px;
     }
-    
+
     .x-nav-btn {
         height: auto;
         padding: 20px;
@@ -923,7 +1193,7 @@ button {
     .x-nav-btn-sub {
         font-size: 18px;
     }
-    
+
     input,
     textarea,
     select {
@@ -935,7 +1205,7 @@ button {
         font-size: 20px;
         padding: 12px 18px;
     }
-    
+
     .login-form {
         padding: 32px 24px;
     }

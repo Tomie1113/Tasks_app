@@ -12,7 +12,7 @@ builder.Logging.AddConsole();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<Database>();
-builder.Services.AddSingleton<AdminSession>();
+//builder.Services.AddSingleton<AdminSession>();
 
 var app = builder.Build();
 

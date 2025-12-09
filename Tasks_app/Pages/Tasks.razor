@@ -4,7 +4,6 @@
 @using QuestPDF.Helpers
 
 @inject Database Db
-@inject AdminSession Admin
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 
@@ -24,17 +23,44 @@
                        class="filter-input filter-name" />
 
             </div>
+            <div class="filter-block tags-filter">
+                @* блок фильтра по тегам *@
+                <label class="filter-label">Теги (несколько)</label>
 
-            <div class="filter-block">
-                <label class="filter-label">Тег</label>
-                <select @bind="FilterTag" class="filter-input">
-                    <option value="0">Все теги</option>
-                    @foreach (var t in Tags)
-                    {
-                        <option value="@t.IdTag">@t.Name</option>
-                    }
-                </select>
+                @* Кнопка-комбобокс *@
+                <div class="combo-multi" @onclick="ToggleTags">
+                    @* открытие/закрытие списка *@
+                    <span>@GetSelectedTagsText()</span> @* текст: какие теги выбраны *@
+                    <span class="arrow">▼</span>        @* стрелочка справа *@
+                </div>
+
+                @* Выпадающий список с чекбоксами *@
+                @if (IsTagsOpen)
+                {
+                    <div class="combo-dropdown">
+                        @* сам дропдаун поверх таблицы *@
+                        @foreach (var t in Tags)
+                        {
+                            <label class="combo-item">
+                                @* пункт списка, выравниваем влево *@
+                                <input type="checkbox"
+                                       checked="@SelectedTags.Contains(t.IdTag)"
+                                       @onchange="@(() => ToggleTag(t.IdTag))" /> @* только меняем флаг, не закрываем *@
+                                <span>@t.Name</span>
+                            </label>
+                        }
+
+                        <button type="button"
+                                class="close-drop"
+                                @onclick="CloseTags">
+                            Готово
+                        </button> @* отдельная кнопка закрытия *@
+                    </div>
+                }
             </div>
+
+
+
 
             <div class="filter-block">
                 <label class="filter-label">Контекст</label>
@@ -46,7 +72,7 @@
                     }
                 </select>
             </div>
-            
+
             <div class="filter-block">
                 <label class="filter-label">Сложность</label>
                 <select @bind="FilterDifficulty" class="filter-input">
@@ -79,51 +105,51 @@
     else
     {
         <div class="table-scroll">
-        <table class="x-table">
-            <thead>
-                <tr>
-                    <th>Название</th>
-                    <th>Условие</th>
-                    <th>Идея</th>
-                    <th>Polygon</th>
-                    <th>CF</th>
-                    <th>Yandex</th>
-                    <th>Сложность</th>
-                    <th>Заметки</th>
-                    <th>Теги</th>
-                    <th>Контекст</th>
-                </tr>
+            <table class="x-table">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Условие</th>
+                        <th>Идея</th>
+                        <th>Polygon</th>
+                        <th>CF</th>
+                        <th>Yandex</th>
+                        <th>Сложность</th>
+                        <th>Заметки</th>
+                        <th>Теги</th>
+                        <th>Контекст</th>
+                    </tr>
                 </thead>
 
-            <tbody>
-                @foreach (var t in Tasks_)
-                {
-                    <tr id="task-row-@t.IdTask" @key="t.IdTask">
-                        <td>@t.Name</td>
-                        <td>@t.Statement</td>
-                        <td>@t.SolutionIdea</td>
-                        <td>@t.PolygonUrl</td>
-                        <td>@t.IsPreparedCF</td>
-                        <td>@t.IsPreparedYandex</td>
-                        <td>@t.Difficulty</td>
-                        <td>@t.Notes</td>
-                        <td>@(string.IsNullOrEmpty(t.Tags) ? "—" : t.Tags)</td>
-                        <td>@(string.IsNullOrEmpty(t.Contexts) ? "—" : t.Contexts)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-                </div>
+                <tbody>
+                    @foreach (var t in Tasks_)
+                    {
+                        <tr id="task-row-@t.IdTask" @key="t.IdTask">
+                            <td>@t.Name</td>
+                            <td>@t.Statement</td>
+                            <td>@t.SolutionIdea</td>
+                            <td>@t.PolygonUrl</td>
+                            <td>@t.IsPreparedCF</td>
+                            <td>@t.IsPreparedYandex</td>
+                            <td>@t.Difficulty</td>
+                            <td>@t.Notes</td>
+                            <td>@(string.IsNullOrEmpty(t.Tags) ? "—" : t.Tags)</td>
+                            <td>@(string.IsNullOrEmpty(t.Contexts) ? "—" : t.Contexts)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 
-    @if (Admin.IsAdmin)
+    @if (IsAdmin)
     {
         <div class="filter-buttons">
 
             <button @onclick="GoToCreateTask">Добавить задачу</button>
             <button @onclick="ExportTasksToPdf">Экспорт в PDF</button>
         </div>
-    }
+
     <div id="task-delete-dialog"
          style="display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
@@ -160,7 +186,7 @@
             </div>
         </div>
     </div>
-
+    }
 
 </div>
 
@@ -171,7 +197,7 @@
     private int FilterTag = 0;
     private int FilterContext = 0;
     private int FilterDifficulty = 0;
-    
+
     private DotNetObjectReference<Tasks> selfObj;
 
     private NewTaskModel NewTask = new();
@@ -222,11 +248,41 @@
     private List<ContestRef> Contests = new();
     private List<TaskItem>? Tasks_;
     private List<int?> Difficulty = new();
-    
+
     public Tasks()
     {
         QuestPDF.Settings.License = LicenseType.Community;
     }
+    private bool BindTag(int id)
+    {
+        return SelectedTags.Contains(id);
+    }
+
+    private void BindTag(int id, bool value)
+    {
+        if (value)
+            SelectedTags.Add(id);
+        else
+            SelectedTags.Remove(id);
+    }
+
+    private bool DropdownOpen = false;
+
+private void ToggleDropdown()
+{
+    DropdownOpen = !DropdownOpen;
+}
+
+private string GetSelectedTagsText()
+{
+    if (SelectedTags.Count == 0)
+        return "Не выбрано";
+
+    return string.Join(", ",
+        Tags.Where(t => SelectedTags.Contains(t.IdTag))
+            .Select(t => t.Name)
+    );
+}
 
     //pdf
     public async Task ExportTasksToPdf()
@@ -242,7 +298,7 @@
             {
                 page.Margin(20);
                 page.Size(PageSizes.A4.Landscape());
-                
+
                 page.Header()
                     .PaddingBottom(10)
                     .AlignCenter()
@@ -265,13 +321,13 @@
                         columns.RelativeColumn(2);  // Теги
                         columns.RelativeColumn(2);  // Контексты
                     });
-                    
+
                     IContainer Cell(IContainer container) =>
                         container
                             .Border(0.5f)
                             .BorderColor("#000")
                             .Padding(4);
-                    
+
                     table.Header(header =>
                     {
                         header.Cell().Element(Cell).Background("#e5e5e5").Text("Название").Bold();
@@ -310,16 +366,41 @@
             Convert.ToBase64String(ms.ToArray())
         );
     }
-    
+
     private IContainer CellStyle(IContainer x) =>
         x.Padding(4).BorderBottom(1).BorderColor("#cccccc");
+    private void ToggleTag(int idTag)
+    {
+        if (SelectedTags.Contains(idTag))
+            SelectedTags.Remove(idTag);
+        else
+            SelectedTags.Add(idTag);
+    }
+    private bool IsTagsOpen = false;
 
-    
+    private void ToggleTags()
+    {
+        IsTagsOpen = !IsTagsOpen;
+    }
+
+    private void CloseTags()
+    {
+        IsTagsOpen = false;
+    }
+
+    private bool IsAdmin;
+
     protected override async Task OnInitializedAsync()
     {
+        // получить токен администратора
+        var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "is_admin");
+        IsAdmin = (token == "1");
+
+        // теперь загружаем данные
         await LoadRefsAsync();
         await LoadTasksAsync();
     }
+
 
     //фильтрация
     private async Task ApplyFilters()
@@ -335,17 +416,34 @@
                 || (t.Statement?.ToLower().Contains(f) ?? false)
             ).ToList();
         }
-
-        //фильтр по тегу
-        if (FilterTag != 0)
+        // фильтр по тегу
+        if (SelectedTags.Count > 0)
         {
-            Tasks_ = Tasks_.Where(t =>
-                !string.IsNullOrEmpty(t.Tags)
-                && t.Tags.Split(", ").Contains(
-                    Tags.First(x => x.IdTag == FilterTag).Name
-                )
-            ).ToList();
+            Tasks_ = Tasks_
+                .Where(t =>
+                {
+                    if (string.IsNullOrWhiteSpace(t.Tags))
+                        return false;
+
+                    // "tag1, tag2, tag3" -> ["tag1", "tag2", "tag3"]
+                    var taskTags = t.Tags
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim().ToLower())
+                        .ToList();
+
+                    // задача должна содержать все выбранные теги
+                    return SelectedTags.Any(tagId =>
+                    {
+                        var tagName = Tags.First(x => x.IdTag == tagId).Name.ToLower();
+                        return taskTags.Contains(tagName);
+                    });
+
+                })
+                .ToList();
         }
+
+
+
 
         //фильтр по контексту
         if (FilterContext != 0)
@@ -357,7 +455,7 @@
             ).ToList();
 
         }
-        
+
         //фильтр по сложности
         if (FilterDifficulty != 0)
         {
@@ -425,7 +523,7 @@
     {
         Tasks_ = new();
 
-        using var conn = Db.GetConnection(); 
+        using var conn = Db.GetConnection();
         await conn.OpenAsync();
 
         string sql = @"
@@ -519,17 +617,17 @@ ORDER BY t.id_task;
     [JSInvokable]
     public async Task RequestTaskDelete(int id)
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await DeleteTask(id);
     }
 
     [JSInvokable]
     public async Task JsLoadTasksAsync()
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await LoadTasksAsync();
     }
-    
+
     //удаление
     public async Task DeleteTask(int id)
     {
@@ -550,13 +648,16 @@ ORDER BY t.id_task;
                 }
             }
 
-            string sql = "DELETE FROM tasks WHERE id_task = :id";
+            string sql = "DELETE FROM tasks WHERE id_task = :id"; // SQL на удаление строки
 
-            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("id", id);
-            
-            await LoadTasksAsync();
-            await InvokeAsync(StateHasChanged);
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);  // создаём команду
+            cmd.Parameters.AddWithValue("id", id);                // подставляем параметр
+
+            await cmd.ExecuteNonQueryAsync();                     // ВАЖНО: реально выполняем DELETE
+
+            await LoadTasksAsync();                               // обновляем список задач
+            await InvokeAsync(StateHasChanged);                   // перерисовываем компонент
+
         }
         catch (Exception ex)
         {

@@ -1,64 +1,91 @@
 ﻿@page "/tasks/edit/{Id:int}"
 
 @using Npgsql
-
+@inject IJSRuntime JS
 @inject Database Db
-@inject AdminSession Admin
 @inject NavigationManager Nav
+<div class="task-add">
+    <h1>@(Id == 0 ? "Новая задача" : "Редактирование задачи")</h1>
 
-<h1>@(Id == 0 ? "Новая задача" : "Редактирование задачи")</h1>
 
-<div class="task-add" style="margin-top:25px; display:flex; flex-direction:column; gap:10px; max-width:600px;">
+        <input @bind="NewTask.Name" type="text" placeholder="Название" />
+        <textarea @bind="NewTask.Statement" placeholder="Условие"></textarea>
+        <textarea @bind="NewTask.SolutionIdea" placeholder="Идея решения"></textarea>
+        <input @bind="NewTask.PolygonUrl" type="text" placeholder="Polygon URL" />
 
-    <input @bind="NewTask.Name" type="text" placeholder="Название" /> 
-    <textarea @bind="NewTask.Statement" placeholder="Условие"></textarea>
-    <textarea @bind="NewTask.SolutionIdea" placeholder="Идея решения"></textarea>
-    <input @bind="NewTask.PolygonUrl" type="text" placeholder="Polygon URL" />
+        <div style="display:flex; gap:15px;">
+            <label><input type="checkbox" @bind="NewTask.IsCF" /> CF</label>
+            <label><input type="checkbox" @bind="NewTask.IsYandex" /> Yandex</label>
+        </div>
 
-    <div style="display:flex; gap:15px;">
-        <label><input type="checkbox" @bind="NewTask.IsCF" /> CF</label>
-        <label><input type="checkbox" @bind="NewTask.IsYandex" /> Yandex</label>
+        <input type="number" @bind="NewTask.Difficulty" min="1" max="10" placeholder="Сложность" />
+        <textarea @bind="NewTask.Notes" placeholder="Заметки"></textarea>
+<label>Теги:</label>
+<div class="combo-wrapper">
+    <div class="combo-multi" @onclick="ToggleTagsDropdown">
+        <span>@GetSelectedTagsText()</span>
+        <span class="arrow">▼</span>
     </div>
 
-    <input type="number" @bind="NewTask.Difficulty" min="1" max="10" placeholder="Сложность" />
-    <textarea @bind="NewTask.Notes" placeholder="Заметки"></textarea>
+    @if (IsTagsDropdownOpen)
+    {
+        <div class="combo-dropdown">
+            @foreach (var t in Tags)
+            {
+                <label class="combo-item">
+                    @* строка с чекбоксом *@
+                    <input type="checkbox"
+                           checked="@SelectedTags.Contains(t.IdTag)"
+                           @onchange="args => OnTagToggle(t.IdTag, (bool)args.Value)" />
+                    <span>@t.Name</span> @* название тега *@
+                </label>
+            }
 
-    <label>Теги:</label>
-    <div class="task-tags-list" style="display:flex; flex-wrap:wrap; gap:8px;">
-        @foreach (var t in Tags)
-        {
-            <label style="display:flex; align-items:center; gap:4px; font-size:var(--fs-table);">
-                <input type="checkbox"
-                       value="@t.IdTag"
-                       checked="@SelectedTags.Contains(t.IdTag)"
-                       @onchange="args => OnTagToggle(t.IdTag, (bool)args.Value)" />
-                @t.Name
-            </label>
-        }
-    </div>
-
-    <label>Контексты:</label>
-    <div class="task-contexts-list" style="display:flex; flex-wrap:wrap; gap:8px;">
-        @foreach (var c in Contests)
-        {
-            <label style="display:flex; align-items:center; gap:4px; font-size:var(--fs-table);">
-                <input type="checkbox"
-                       value="@c.IdContest"
-                       checked="@SelectedContexts.Contains(c.IdContest)"
-                       @onchange="args => OnContextToggle(c.IdContest, (bool)args.Value)" />
-                @c.Name
-            </label>
-        }
-    </div>
-
-    <button @onclick="Save">Сохранить</button>
-    <button @onclick="Cancel">Отмена</button>
+            <button type="button"
+                    class="close-drop"
+                    @onclick="CloseTagsDropdown">Готово</button>
+        </div>
+    }
 </div>
 
+
+<label>Контексты:</label>
+<div class="combo-wrapper">
+    <div class="combo-multi" @onclick="ToggleContextsDropdown">
+        <span>@GetSelectedContextsText()</span>
+        <span class="arrow">▼</span>
+    </div>
+
+    @if (IsContextsDropdownOpen)
+    {
+        <div class="combo-dropdown">
+            @foreach (var c in Contests)
+            {
+                <label class="combo-item">
+                    @* строка с чекбоксом *@
+                    <input type="checkbox"
+                           checked="@SelectedContexts.Contains(c.IdContest)"
+                           @onchange="args => OnContextToggle(c.IdContest, (bool)args.Value)" />
+                    <span>@c.Name</span> @* название контекста *@
+                </label>
+            }
+
+            <button type="button"
+                    class="close-drop"
+                    @onclick="CloseContextsDropdown">Готово</button>
+        </div>
+    }
+</div>
+
+
+        <button @onclick="Save">Сохранить</button>
+        <button @onclick="Cancel">Отмена</button>
+
+</div>
 @code {
     [Parameter]
-    public int Id { get; set; } 
-    
+    public int Id { get; set; }
+
     public class NewTaskModel
     {
         public string Name { get; set; } = "";
@@ -83,16 +110,59 @@
         public int IdContest { get; set; }
         public string Name { get; set; } = "";
     }
+    private bool IsTagsDropdownOpen = false;       // открыт ли дропдаун тегов
+private bool IsContextsDropdownOpen = false;   // открыт ли дропдаун контекстов
 
+private void ToggleTagsDropdown()              // открыть/закрыть список тегов
+{
+    IsTagsDropdownOpen = !IsTagsDropdownOpen;  // инвертируем флаг
+}
+
+private void CloseTagsDropdown()               // закрыть список тегов
+{
+    IsTagsDropdownOpen = false;                // просто закрываем
+}
+
+private void ToggleContextsDropdown()          // открыть/закрыть список контекстов
+{
+    IsContextsDropdownOpen = !IsContextsDropdownOpen; // инвертируем флаг
+}
+
+private void CloseContextsDropdown()           // закрыть список контекстов
+{
+    IsContextsDropdownOpen = false;            // закрываем
+}
+
+private string GetSelectedTagsText()           // текст для кнопки тегов
+{
+    if (SelectedTags.Count == 0)               // если ничего не выбрано
+        return "Не выбрано";                  // показываем заглушку
+
+    return string.Join(", ",                  // склеиваем названия
+        Tags.Where(t => SelectedTags.Contains(t.IdTag)) // фильтруем по выбранным id
+            .Select(t => t.Name));            // берём имена
+}
+
+private string GetSelectedContextsText()       // текст для кнопки контекстов
+{
+    if (SelectedContexts.Count == 0)          // если ни одного контекста нет
+        return "Не выбрано";                  // показываем заглушку
+
+    return string.Join(", ",                  // склеиваем имена
+        Contests.Where(c => SelectedContexts.Contains(c.IdContest)) // только выбранные
+                .Select(c => c.Name));        // берём названия
+}
     private NewTaskModel NewTask = new();
     private List<TagRef> Tags = new();
     private List<ContestRef> Contests = new();
     private HashSet<int> SelectedTags = new();
     private HashSet<int> SelectedContexts = new();
-    
+    private bool IsAdmin;
     protected override async Task OnInitializedAsync()
-    {
-        if (!Admin.IsAdmin)
+    {    // получить токен администратора
+        var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "is_admin");
+        IsAdmin = (token == "1");
+        if (!IsAdmin)
         {
             Nav.NavigateTo("/tasks");
             return;
@@ -142,7 +212,7 @@
             }
         }
     }
-    
+
     //задачи
     private async Task LoadTaskAsync(int id)
     {
@@ -188,7 +258,7 @@
                 return;
             }
         }
-        
+
         SelectedTags.Clear();
 
         //выбранные теги
@@ -215,7 +285,7 @@
                 SelectedContexts.Add(rc.GetInt32(0));
         }
     }
-    
+
     private void OnTagToggle(int tagId, bool isChecked)
     {
         if (isChecked)
@@ -236,14 +306,14 @@
     //кнопки
     private async Task Save()
     {
-        if (!Admin.IsAdmin)
+        if (!IsAdmin)
             return;
 
         using var conn = Db.GetConnection();
         await conn.OpenAsync();
 
         int taskId;
-        
+
         if (Id == 0)
         {
             //добавление
@@ -305,7 +375,7 @@
             await cmd.ExecuteNonQueryAsync();
             taskId = Id;
         }
-        
+
         //перезапись тегов
         {
             const string delSql = "DELETE FROM task_tags WHERE id_task = :t";

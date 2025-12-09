@@ -3,78 +3,110 @@
 @using Microsoft.AspNetCore.Mvc
 @using NpgsqlTypes
 @inject Database Db
-@inject AdminSession Admin
 @inject IJSRuntime JS
 
 <div class="x-container" @ref="selfRef">
-<h1>Контесты</h1>
+    <h1>Контесты</h1>
 
-@if (Contests_ == null)
-{
-    <p>Загрузка...</p>
-}
-else if (Contests_.Count == 0)
-{
-    <p>Контесты отсутствуют.</p>
-}
-else
-{
-    <div class="filters-row">
+    @if (Contests_ == null)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (Contests_.Count == 0)
+    {
+        <div class="filters-panel">
 
-        <div class="filter-block">
-            <label class="filter-label">Поиск</label>
-            <input @bind="FilterName"
-                   type="text"
-                   placeholder="Название контеста"
-                   class="filter-input filter-name" />
+            <div class="filters-row">
 
+                <div class="filter-block">
+                    <label class="filter-label">Поиск</label>
+                    <input @bind="FilterName"
+                           type="text"
+                           placeholder="Название контеста"
+                           class="filter-input filter-name" />
+
+                </div>
+
+                <div class="filter-block">
+                    <label class="filter-label">Сложность</label>
+                    <select @bind="FilterYear" class="filter-input">
+                        <option value="0">Любой год</option>
+                        @foreach (var y in Years)
+                        {
+                            <option value="@y">@y</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
+                    <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
+                </div>
+            </div>
         </div>
 
-        <div class="filter-block">
-            <label class="filter-label">Сложность</label>
-            <select @bind="FilterYear" class="filter-input">
-                <option value="0">Любой год</option>
-                @foreach (var y in Years)
-                {
-                    <option value="@y">@y</option>
-                }
-            </select>
-        </div>
-        
-        <div class="filter-buttons">
-            <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
-            <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
-        </div>
+        <p>Контесты отсутствуют.</p>
+    }
+    else
+    {
+        <div class="filters-panel">
 
-    </div>
-    <table class="x-table">
-        <thead>
-            <tr>
-                <th>Название</th>
-                <th>Год</th>
-            </tr>
-        </thead>
+            <div class="filters-row">
 
-        <tbody>
-            @foreach (var c in Contests_)
-            {
-                <tr @key="c.IdContest">
-                    <td id="contest-name-@c.IdContest">@c.NameContest</td>
-                    <td id="contest-year-@c.IdContest">@c.YearContest</td>
+                <div class="filter-block">
+                    <label class="filter-label">Поиск</label>
+                    <input @bind="FilterName"
+                           type="text"
+                           placeholder="Название контеста"
+                           class="filter-input filter-name" />
+
+                </div>
+
+                <div class="filter-block">
+                    <label class="filter-label">Сложность</label>
+                    <select @bind="FilterYear" class="filter-input">
+                        <option value="0">Любой год</option>
+                        @foreach (var y in Years)
+                        {
+                            <option value="@y">@y</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
+                    <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
+                </div>
+            </div>
+        </div>
+        <table class="x-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Год</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
+            </thead>
 
-    @if (Admin.IsAdmin)
+            <tbody>
+                @foreach (var c in Contests_)
+                {
+                    <tr @key="c.IdContest">
+                        <td id="contest-name-@c.IdContest">@c.NameContest</td>
+                        <td id="contest-year-@c.IdContest">@c.YearContest</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (IsAdmin)
     {
         <div class="tag-add">
             <input @bind="nameInput" type="text" placeholder="Название" />
             <input @bind="yearInput" type="number" maxlength="4" placeholder="Год" />
             <button @onclick="ContestsAdd">Добавить</button>
         </div>
-    }
+
     <div id="contest-delete-dialog"
          style="display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
@@ -103,23 +135,26 @@ else
             </div>
         </div>
     </div>
-</div>
-    
+ }
+</div>   
+
 @code {
     private string nameInput;
     private int yearInput;
     private bool IsEditing = false;
     private string FilterName = "";
     private int FilterYear = 0;
-    
+
     private List<ContestItem>? Contests_;
     private ElementReference selfRef;
     private DotNetObjectReference<Contests> selfObj;
-    
+
     private List<int?> Years = new();
 
+    private bool IsAdmin;
     protected override async Task OnInitializedAsync()
     {
+
         await LoadContestsAsync();
     }
 
@@ -145,13 +180,13 @@ else
         while (await reader.ReadAsync())
         {
             Contests_.Add(new ContestItem
-                {
-                    IdContest = reader.GetInt32(0),
-                    NameContest = reader.GetString(1),
-                    YearContest = reader.IsDBNull(2) ? 0 : reader.GetInt32(2)
-                });
+            {
+                IdContest = reader.GetInt32(0),
+                NameContest = reader.GetString(1),
+                YearContest = reader.IsDBNull(2) ? 0 : reader.GetInt32(2)
+            });
         }
-        
+
         if (Contests_ != null)
         {
             foreach (var year in Contests_)
@@ -192,51 +227,83 @@ else
             using var cmd = new Npgsql.NpgsqlCommand(sql, conn);
 
             cmd.Parameters.Add(new NpgsqlParameter
-                {
-                    ParameterName = "name",
-                    Value = nameInput
-                });
+            {
+                ParameterName = "name",
+                Value = nameInput
+            });
             cmd.Parameters.Add(new NpgsqlParameter
-                {
-                    ParameterName = "year",
-                    Value = yearInput
-                });
+            {
+                ParameterName = "year",
+                Value = yearInput
+            });
 
             await cmd.ExecuteNonQueryAsync();
             //вывод сообщеения об успешном добавлении в бд
-            
+
             await LoadContestsAsync();
             nameInput = "";
             yearInput = 0;
         }
     }
-    
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //             // получить токен администратора
+    //     var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "is_admin");
+    //     IsAdmin = (token == "1");
+    //     if (Contests_ == null)
+    //         return;
+
+    //     foreach (var t in Contests_)
+    //         await JS.InvokeVoidAsync("ContestsInterop.bindRowEventsById", t.IdContest);
+    //     if (firstRender)
+    //     {
+    //         selfObj = DotNetObjectReference.Create(this);
+    //         await JS.InvokeVoidAsync("ContestsInterop.setComponent", selfObj);
+    //     }
+
+    // }
+    private bool _first = true;
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (_first && firstRender)
     {
-        if (Contests_ == null)
-            return;
+        _first = false;
 
-        foreach (var t in Contests_)
-            await JS.InvokeVoidAsync("ContestsInterop.bindRowEventsById", t.IdContest);
-        if (firstRender)
-        {
-            selfObj = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("ContestsInterop.setComponent", selfObj);
-        }
+        // теперь JS можно вызывать безопасно
+        var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "is_admin");
+        IsAdmin = (token == "1");
 
+        // нужно перерисовать интерфейс, чтобы показать кнопки админа
+        await InvokeAsync(StateHasChanged);
     }
-    
+
+    if (Contests_ == null)
+        return;
+
+    foreach (var t in Contests_)
+        await JS.InvokeVoidAsync("ContestsInterop.bindRowEventsById", t.IdContest);
+
+    if (firstRender)
+    {
+        selfObj = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("ContestsInterop.setComponent", selfObj);
+    }
+}
+
+
     private async Task ApplyFilters()
     {
         await LoadContestsAsync();
-        
+
         if (!string.IsNullOrWhiteSpace(FilterName))
         {
             string f = FilterName.ToLower();
             Contests_ = Contests_.Where(n =>
                 (n.NameContest?.ToLower().Contains(f) ?? false)).ToList();
         }
-        
+
         if (FilterYear != 0)
         {
             Contests_ = Contests_.Where(y => y.YearContest == FilterYear).ToList();
@@ -251,7 +318,7 @@ else
         await LoadContestsAsync();
         StateHasChanged();
     }
-    
+
     //JS
     [JSInvokable]
     public void StartEdit()
@@ -262,24 +329,24 @@ else
     [JSInvokable]
     public async Task RequestContestDelete(int id)
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await DeleteContest(id);
     }
 
     [JSInvokable]
     public async Task RequestContestRename(int id, string newElem, string type)
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await RenameContest(id, newElem, GetRenameContestType(type));
     }
-    
+
     [JSInvokable]
     public async Task JsLoadContestsAsync()
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await LoadContestsAsync();
     }
-    
+
     //переименование
     public enum RenameContestType
     {
@@ -296,7 +363,7 @@ else
             _ => throw new Exception()
         };
     }
-    
+
     public async Task RenameContest(int id, string value, RenameContestType type)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -331,14 +398,14 @@ else
         }
         cmd.Parameters.AddWithValue("id", id);
         await cmd.ExecuteNonQueryAsync();
-        
+
         IsEditing = false;
 
         await LoadContestsAsync();
         await InvokeAsync(StateHasChanged);
 
     }
-    
+
     //удаление
     public async Task DeleteContest(int id)
     {

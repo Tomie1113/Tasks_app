@@ -1,15 +1,14 @@
 ﻿@page "/login"
 @inject Database Db
-@inject AdminSession AdminState
-@inject NavigationManager NavigationManager
-
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <div class="x-container">
     <div class="login-page-container">
         <div class="login-form">
             <h2 style="text-align:center; margin-bottom:10px;">Вход администратора</h2>
 
-            @if (!AdminState.IsAdmin)
+            @if (!Success_enter)
             {
                 <label>Логин</label>
                 <input type="text" @bind="Username" />
@@ -26,21 +25,11 @@
             }
             else
             {
-                @if (Success_enter)
-                {
-                    <p style="color:green; text-align:center; margin-top:10px;">
-                        Вы авторизовались под правами Администратора!
-                    </p>
-                }
-                else
-                {
-                    <p style="color:green; text-align:center; margin-top:10px;">
-                        Вы уже вошли как Администратор.
-                    </p>
-                }
+                <p style="color:limegreen; text-align:center; margin-top:10px;">
+                    Вы уже вошли как администратор.
+                </p>
             }
         </div>
-
     </div>
 </div>
 
@@ -48,11 +37,11 @@
     private string Username = "";
     private string Password = "";
     private string Error = "";
-    private string Success = "";
     private bool Success_enter = false;
+    private bool _checkedAdmin = false; // чтобы не крутиться в цикле
+
     private async Task Login_()
     {
-        // AdminState.LoginAdmin();
         string hash = ComputeSha256(Password);
 
         using var conn = Db.GetConnection();
@@ -69,10 +58,10 @@
         if (result != null)
         {
             Error = "";
-            AdminState.LoginAdmin();
-
             Success_enter = true;
-            StateHasChanged();
+
+            // ставим статус администратора
+            await JS.InvokeVoidAsync("sessionStorage.setItem", "is_admin", "1");
         }
         else
         {
@@ -80,6 +69,22 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_checkedAdmin)
+        {
+            _checkedAdmin = true;
+
+            // если уже залогинен в этом браузере — сразу показываем зелёную надпись
+            var flag = await JS.InvokeAsync<string>("sessionStorage.getItem", "is_admin");
+            if (flag == "1")
+            {
+                Success_enter = true;
+                Error = "";
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
 
     private string ComputeSha256(string raw)
     {

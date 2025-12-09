@@ -1,6 +1,5 @@
 ﻿@page "/tags"
 @inject Database Db
-@inject AdminSession Admin
 @inject IJSRuntime JS
 
 <div class="x-container" @ref="selfRef">
@@ -13,53 +12,74 @@
     }
     else if (Tags_.Count == 0)
     {
+          <div class="filters-panel">
+            <div class="filters-row">
+
+                <div class="filter-block">
+                    <label class="filter-label">Поиск</label>
+                    <input @bind="FilterName"
+                           type="text"
+                           placeholder="Название тега"
+                           class="filter-input filter-name" />
+
+                </div>
+
+                <div class="filter-buttons">
+                    <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
+                    <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
+                </div>
+
+            </div>
+        </div>
         <p>Теги отсутствуют.</p>
     }
     else
     {
-        <div class="filters-row">
+        <div class="filters-panel">
+            <div class="filters-row">
 
-            <div class="filter-block">
-                <label class="filter-label">Поиск</label>
-                <input @bind="FilterName"
-                       type="text"
-                       placeholder="Название тега"
-                       class="filter-input filter-name" />
+                <div class="filter-block">
+                    <label class="filter-label">Поиск</label>
+                    <input @bind="FilterName"
+                           type="text"
+                           placeholder="Название тега"
+                           class="filter-input filter-name" />
+
+                </div>
+
+                <div class="filter-buttons">
+                    <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
+                    <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
+                </div>
 
             </div>
-
-            <div class="filter-buttons">
-                <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
-                <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
-            </div>
-
         </div>
-        
-        <table class="x-table">
-            <thead>
-                <tr>
-                    <th>Название</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var t in Tags_)
-                {
-                    <tr @key="t.IdTag">
-                        <td id="tag-@t.IdTag">@t.NameTag</td>
+            <table class="x-table">
+                <thead>
+                    <tr>
+                        <th>Название</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+
+                <tbody>
+                    @foreach (var t in Tags_)
+                    {
+                        <tr @key="t.IdTag">
+                            <td id="tag-@t.IdTag">@t.NameTag</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        
     }
 
-    @if (Admin.IsAdmin)
+    @if (IsAdmin)
     {
         <div class="tag-add">
             <input @bind="tagInput" type="text" placeholder="Новый тег" />
             <button @onclick="TagsAdd">Добавить</button>
         </div>
-    }
+    
     <div id="tag-delete-dialog"
          style="display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
@@ -89,7 +109,7 @@
         </div>
     </div>
 
-
+    }
 
 </div>
 
@@ -107,21 +127,48 @@
         Instance = this;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (Tags_ == null)
+    //         return;
+
+    //     foreach (var t in Tags_)
+    //         await JS.InvokeVoidAsync("TagsInterop.bindRowEventsById", t.IdTag);
+    //     if (firstRender)
+    //     {
+    //         selfObj = DotNetObjectReference.Create(this);
+    //         await JS.InvokeVoidAsync("TagsInterop.setComponent", selfObj);
+    //     }
+
+    // }
+    private bool _loadedAdmin = false;
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender && !_loadedAdmin)
     {
-        if (Tags_ == null)
-            return;
+        _loadedAdmin = true;
 
-        foreach (var t in Tags_)
-            await JS.InvokeVoidAsync("TagsInterop.bindRowEventsById", t.IdTag);
-        if (firstRender)
-        {
-            selfObj = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("TagsInterop.setComponent", selfObj);
-        }
+        var token = await JS.InvokeAsync<string>("sessionStorage.getItem", "is_admin");
+        IsAdmin = (token == "1");
 
+        await InvokeAsync(StateHasChanged);
     }
-    
+
+    if (Tags_ == null)
+        return;
+
+    foreach (var t in Tags_)
+        await JS.InvokeVoidAsync("TagsInterop.bindRowEventsById", t.IdTag);
+
+    if (firstRender)
+    {
+        selfObj = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("TagsInterop.setComponent", selfObj);
+    }
+}
+
+
     private async Task ApplyFilters()
     {
         await LoadTagsAsync();
@@ -152,20 +199,20 @@
     [JSInvokable]
     public async Task RequestTagDelete(int id)
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await DeleteTag(id);
     }
 
     [JSInvokable]
     public async Task RequestTagRename(int id, string newName)
     {
-        if (Admin.IsAdmin)
+        if (IsAdmin)
             await RenameTag(id, newName);
     }
 
 
     //переименование
-    
+
     public async Task RenameTag(int id, string name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -185,7 +232,7 @@
         await cmd.ExecuteNonQueryAsync();
 
         IsEditing = false;
-        
+
         await LoadTagsAsync();
         await InvokeAsync(StateHasChanged);
 
@@ -219,7 +266,7 @@
             cmd.Parameters.AddWithValue("id", id);
 
             int rows = await cmd.ExecuteNonQueryAsync();
-            
+
             await LoadTagsAsync();
             await InvokeAsync(StateHasChanged);
         }
@@ -233,7 +280,7 @@
     //инициализация
     private List<TagItem>? Tags_;
     private string tagInput;
-
+    private bool IsAdmin;
     protected override async Task OnInitializedAsync()
     {
         await LoadTagsAsync();
@@ -258,13 +305,13 @@
         while (await reader.ReadAsync())
         {
             Tags_.Add(new TagItem
-                {
-                    IdTag = reader.GetInt32(0),
-                    NameTag = reader.GetString(1)
-                });
+            {
+                IdTag = reader.GetInt32(0),
+                NameTag = reader.GetString(1)
+            });
         }
     }
-    
+
     //добавление
     private async Task TagsAdd()
     {
@@ -284,7 +331,7 @@
         await LoadTagsAsync();
         tagInput = "";
     }
-    
+
     public class TagItem
     {
         public int IdTag { get; set; }
