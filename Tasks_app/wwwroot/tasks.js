@@ -4,8 +4,9 @@ window.TasksInterop = {
     // =====================
     //   ПОЛУЧЕНИЕ ССЫЛКИ НА КОМПОНЕНТ
     // =====================
-    setTasks: function (instance) {
+    setComponent: function (instance) {
         comp3 = instance;
+        console.log(instance);
     },
 
     // =====================
@@ -30,6 +31,7 @@ window.TasksInterop = {
 
         yesNew.addEventListener("click", () => {
             close();
+            console.log(comp3);
             comp3.invokeMethodAsync("RequestTaskDelete", id);
         });
 
@@ -136,4 +138,37 @@ window.TasksInterop = {
 
         });
     },
+
+    bindRowEventsById: function (id) {
+        const name = document.getElementById(`task-name-${id}`);
+        const statement = document.getElementById(`task-statement-${id}`);
+        const solutionIdea = document.getElementById(`task-solutionIdea-${id}`);
+        const polygonUrl = document.getElementById(`task-polygonUrl-${id}`);
+        const isPreparedCf = document.getElementById(`task-isPreparedCF-${id}`);
+        const isPreparedYandex = document.getElementById(`task-isPreparedYandex-${id}`);
+        const difficulty = document.getElementById(`task-difficulty-${id}`);
+        const notes = document.getElementById(`task-notes-${id}`);
+        const tag = document.getElementById(`task-tag-${id}`);
+        const contest = document.getElementById(`task-contest--${id}`);
+        if (name)
+            window.TasksInterop.bindRowEvents(name, id);
+        if (statement)
+            window.TasksInterop.bindRowEvents(statement, id);
+        if (solutionIdea)
+            window.TasksInterop.bindRowEvents(solutionIdea, id);
+        if (polygonUrl)
+            window.TasksInterop.bindRowEvents(polygonUrl, id);
+        if (isPreparedCf)
+            window.TasksInterop.bindRowEvents(isPreparedCf, id);
+        if (isPreparedYandex)
+            window.TasksInterop.bindRowEvents(isPreparedYandex, id);
+        if (difficulty)
+            window.TasksInterop.bindRowEvents(difficulty, id);
+        if (notes)
+            window.TasksInterop.bindRowEvents(notes, id);
+        if (tag)
+            window.TasksInterop.bindRowEvents(tag, id);
+        if (contest)
+            window.TasksInterop.bindRowEvents(contest, id);
+    }
 };
