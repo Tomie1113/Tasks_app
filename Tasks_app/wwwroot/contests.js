@@ -50,7 +50,7 @@ window.ContestsInterop = {
             window.ContestsInterop.confirmDelete(id);
         });
 
-        // Долгое нажатие → диалог удаления
+        // Долгое нажатие для мобильных
         let pressTimer = null;
         element.addEventListener("touchstart", function () {
             pressTimer = setTimeout(() => {
@@ -61,13 +61,12 @@ window.ContestsInterop = {
 
         // Двойной клик → редактирование
         element.addEventListener("dblclick", function () {
-            
+
             comp2.invokeMethodAsync("StartEdit");
 
             // Удаляем прошлый input
             const old = element.querySelector("input");
-            if (old)
-                old.remove();
+            if (old) old.remove();
 
             const currentValue = element.innerText.trim();
 
@@ -81,9 +80,14 @@ window.ContestsInterop = {
 
             let renameSent = false;
 
+            function detectType() {
+                if (element.id.includes("name")) return "name";
+                if (element.id.includes("year")) return "year";
+                return "";
+            }
+
             // Enter
             input.addEventListener("keydown", function (e) {
-                let type =    "";
                 if (e.key === "Enter" && !renameSent) {
                     renameSent = true;
 
@@ -92,33 +96,35 @@ window.ContestsInterop = {
                         comp2.invokeMethodAsync("JsLoadContestsAsync");
                         return;
                     }
+
+                    const type = detectType();
+
                     element.innerHTML = val;
-
-                    if (element.id.includes("name"))
-                        type = "name";
-                    if (element.id.includes("year"))
-                        type = "year";
-
                     comp2.invokeMethodAsync("RequestContestRename", id, val, type);
                 }
             });
 
-            // Потеря фокуса
+            // Blur
             input.addEventListener("blur", function () {
-
-                if (!document.body.contains(input)) return;
                 if (renameSent) return;
 
                 renameSent = true;
 
                 const val = input.value.trim();
-                if (val.length === 0) return;
+                if (val.length === 0) {
+                    comp2.invokeMethodAsync("JsLoadContestsAsync");
+                    return;
+                }
 
-                comp2.invokeMethodAsync("RequestContestRename", id, val);
+                const type = detectType();
+
+                element.innerHTML = val;
+                comp2.invokeMethodAsync("RequestContestRename", id, val, type);
             });
 
         });
     },
+
 
     // =====================
     //   ПРИВЯЗКА К ID

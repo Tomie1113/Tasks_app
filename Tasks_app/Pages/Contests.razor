@@ -41,7 +41,7 @@ else
 
     @if (Admin.IsAdmin)
     {
-        <div class="contest-add">
+        <div class="tag-add">
             <input @bind="nameInput" type="text" placeholder="Название" />
             <input @bind="yearInput" type="number" maxlength="4" placeholder="Год" />
             <button @onclick="ContestsAdd">Добавить</button>

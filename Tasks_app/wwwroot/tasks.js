@@ -1,139 +1,155 @@
-﻿let comp3 = null;
+﻿let comp3 = null; // ссылка на Blazor-компонент задач
 
 window.TasksInterop = {
+
     // =====================
-    //   ПОЛУЧЕНИЕ ССЫЛКИ НА КОМПОНЕНТ
+    //  ПОЛУЧЕНИЕ ССЫЛКИ НА КОМПОНЕНТ C#
     // =====================
-    setTasks: function (instance) {
-        comp3 = instance;
+    setComponent: function (instance) {
+        comp3 = instance; // сохраняем .NET-объект
+        console.debug("[TasksInterop] Component attached:", instance); // отладочный лог
     },
 
     // =====================
-    //   ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ
+    //  ДИАЛОГ ПОДТВЕРЖДЕНИЯ УДАЛЕНИЯ
     // =====================
     confirmDelete: function (id) {
+        console.debug("[TasksInterop] confirmDelete called. id =", id); // лог вызова
 
-        const dialog = document.getElementById("task-delete-dialog");
-        const yes = document.getElementById("task-del-yes");
-        const no = document.getElementById("task-del-no");
+        // Пытаемся сначала найти отдельный диалог для задач,
+        // если его нет — используем общий (как у тегов)
+        const dialog =
+            document.getElementById("task-delete-dialog") // диалог для задач
+            || document.getElementById("tag-delete-dialog"); // общий диалог, если используется один
 
-        dialog.style.display = "flex";
+        const yesBtn =
+            document.getElementById("task-del-yes") // кнопка Да для задач
+            || document.getElementById("tag-del-yes"); // fallback на кнопки тегов
 
-        const close = () => dialog.style.display = "none";
+        const noBtn =
+            document.getElementById("task-del-no") // кнопка Нет для задач
+            || document.getElementById("tag-del-no"); // fallback на кнопки тегов
 
-        // удаляем старые обработчики, чтобы не повторялись
-        yes.replaceWith(yes.cloneNode(true));
-        no.replaceWith(no.cloneNode(true));
+        if (!dialog) { // если диалог вообще не найден
+            console.warn("[TasksInterop] Delete dialog element not found"); // лог
+            return; // выходим
+        }
 
-        const yesNew = document.getElementById("task-del-yes");
-        const noNew = document.getElementById("task-del-no");
+        dialog.style.display = "flex"; // показываем диалог
 
+        const close = () => dialog.style.display = "none"; // функция закрытия
+
+        if (!yesBtn || !noBtn) { // если нет кнопок, дальше смысла нет
+            console.warn("[TasksInterop] Delete dialog buttons not found"); // лог
+            return; // выходим
+        }
+
+        // Сбрасываем старые обработчики, чтобы клики не дублировались
+        const yesNew = yesBtn.cloneNode(true); // новый элемент Да
+        const noNew = noBtn.cloneNode(true);   // новый элемент Нет
+
+        yesBtn.parentNode.replaceChild(yesNew, yesBtn); // подменяем старую кнопку Да
+        noBtn.parentNode.replaceChild(noNew, noBtn);    // подменяем старую кнопку Нет
+
+        // Подтверждение удаления
         yesNew.addEventListener("click", () => {
-            close();
-            comp3.invokeMethodAsync("RequestTaskDelete", id);
+            console.debug("[TasksInterop] delete confirmed:", id); // лог
+            close(); // закрываем диалог
+
+            if (!comp3) { // если компонент не установлен
+                console.error("[TasksInterop] comp3 is NULL on delete confirm"); // лог ошибки
+                return; // выходим
+            }
+
+            comp3.invokeMethodAsync("RequestTaskDelete", id); // вызываем C#-метод удаления
         });
 
+        // Отмена удаления
         noNew.addEventListener("click", () => {
-            close();
+            console.debug("[TasksInterop] delete canceled"); // лог отмены
+            close(); // просто закрываем диалог
         });
     },
 
     // =====================
-    //    ОБРАБОТКА СТРОК
+    // ПРИВЯЗКА ВСЕХ СОБЫТИЙ К СТРОКЕ
     // =====================
     bindRowEvents: function (element, id) {
 
+        if (!element) { // если элемента нет
+            console.warn("[TasksInterop] bindRowEvents: element is NULL for id =", id); // лог
+            return; // выходим
+        }
+
+        // Чтобы не навешивать обработчики по нескольку раз — ставим флаг
+        if (element.dataset.bound === "true") { // уже привязано
+            console.debug("[TasksInterop] Row already bound, skipping:", id); // лог
+            return; // выходим
+        }
+
+        element.dataset.bound = "true"; // помечаем, что обработчики уже навешаны
+        console.debug("[TasksInterop] Binding events for row:", id); // лог
+
         // ПКМ → диалог удаления
         element.addEventListener("contextmenu", function (e) {
-            e.preventDefault();
-            window.TasksInterop.confirmDelete(id);
+            e.preventDefault(); // отключаем стандартное меню
+            console.debug("[TasksInterop] Right click on row:", id); // лог
+            window.TasksInterop.confirmDelete(id); // показываем диалог удаления
         });
 
-        // Долгое нажатие → диалог удаления
-        let pressTimer = null;
-        element.addEventListener("touchstart", function () {
-            pressTimer = setTimeout(() => {
-                window.TasksInterop.confirmDelete(id);
-            }, 600);
-        });
-        element.addEventListener("touchend", () => clearTimeout(pressTimer));
-
-        // Двойной клик → редактирование
+        // Двойной клик → редактирование задачи
         element.addEventListener("dblclick", function () {
-
-            comp3.invokeMethodAsync("StartEdit");
-
-            // Удаляем прошлый input
-            const old = element.querySelector("input");
-            if (old)
-                old.remove();
-
-            const currentValue = element.innerText.trim();
-
-            const input = document.createElement("input");
-            input.value = currentValue;
-            input.style.width = "100%";
-
-            element.innerHTML = "";
-            element.appendChild(input);
-            input.focus();
-
-            let renameSent = false;
-
-            // Enter
-            input.addEventListener("keydown", function (e) {
-                let type =    "";
-                if (e.key === "Enter" && !renameSent) {
-                    renameSent = true;
-
-                    const val = input.value.trim();
-                    if (val.length === 0) {
-                        comp3.invokeMethodAsync("JsLoadTasksAsync");
-                        return;
-                    }
-                    element.innerHTML = val;
-
-                    if (element.id.includes("name"))
-                        type = "name";
-                    if (element.id.includes("statement"))
-                        type = "statement";
-                    if (element.id.includes("solutionIdea"))
-                        type = "solutionIdea";
-                    if (element.id.includes("polygonUrl"))
-                        type = "polygonUrl";
-                    if (element.id.includes("isPreparedCf"))
-                        type = "isPreparedCf";
-                    if (element.id.includes("isPreparedYandex"))
-                        type = "isPreparedYandex";
-                    if (element.id.includes("difficulty"))
-                        type = "difficulty";
-                    if (element.id.includes("notes"))
-                        type = "notes";
-                    /*
-                    if (element.id.includes("tag"))
-                        type = "tag";
-                    if (element.id.includes("contest"))
-                        type = "contest";
-                     */
-
-                    comp3.invokeMethodAsync("RequestTaskRename", id, val, type);
-                }
-            });
-
-            // Потеря фокуса
-            input.addEventListener("blur", function () {
-
-                if (!document.body.contains(input)) return;
-                if (renameSent) return;
-
-                renameSent = true;
-
-                const val = input.value.trim();
-                if (val.length === 0) return;
-
-                comp3.invokeMethodAsync("RequestTaskRename", id, val);
-            });
-
+            console.debug("[TasksInterop] Double click on row:", id); // лог
+            if (!comp3) { // если компонент не установлен
+                console.error("[TasksInterop] comp3 is NULL on dblclick"); // лог ошибки
+                return; // выходим
+            }
+            comp3.invokeMethodAsync("RequestTaskEdit", id); // вызываем C#-метод редактирования
         });
+
+        // Долгое нажатие для мобильных → диалог удаления
+        let pressTimer = null; // таймер долгого нажатия
+
+        element.addEventListener("touchstart", function () {
+            pressTimer = setTimeout(() => { // запускаем таймер
+                console.debug("[TasksInterop] Long touch on row:", id); // лог
+                window.TasksInterop.confirmDelete(id); // показываем диалог удаления
+            }, 600); // длительность долгого нажатия (мс)
+        });
+
+        element.addEventListener("touchend", function () {
+            clearTimeout(pressTimer); // сбрасываем таймер при отпускании
+        });
+
     },
+    //// =====================
+    //// НАЙТИ СТРОКУ ПО ID И ПОВЕСИТЬ СОБЫТИЯ
+    //// =====================
+    //bindRowEventsById: function (id) {
+    //    const el = document.getElementById(`task-${id}`); // ищем td c id="task-<id>"
+
+    //    if (!el) {
+    //        console.warn("[TasksInterop] Row cell not found:", id); // для отладки
+    //        return;
+    //    }
+
+    //    console.debug("[TasksInterop] Found row cell, binding:", id);
+    //    window.TasksInterop.bindRowEvents(el, id); // навешиваем обработчики
+    //}
+    // =====================
+    // НАЙТИ СТРОКУ ПО ID И ПОВЕСИТЬ СОБЫТИЯ
+    // =====================
+    bindRowEventsById: function (id) {
+        const el = document.getElementById(`task-row-${id}`); // ищем ВСЮ строку
+
+        if (!el) {
+            console.warn("[TasksInterop] Row not found:", id);
+            return;
+        }
+
+        console.debug("[TasksInterop] Found row, binding:", id);
+        window.TasksInterop.bindRowEvents(el, id); // вешаем обработчики на <tr>
+    }
+
+
 };

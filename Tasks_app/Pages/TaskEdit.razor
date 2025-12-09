@@ -1,35 +1,365 @@
-﻿@page "/tasks/edit/{id:int}"
+﻿@page "/tasks/edit/{Id:int}"
 
-<h1>Редактирование задачи</h1>
+@using Npgsql
 
-<div class="edit-form">
-    <label>Название:</label>
-    <input type="text" />
+@inject Database Db          // работа с БД
+@inject AdminSession Admin   // признак администратора
+@inject NavigationManager Nav
 
-    <label>Условие:</label>
-    <textarea></textarea>
+<h1>@(Id == 0 ? "Новая задача" : "Редактирование задачи")</h1>
 
-    <label>Идея решения:</label>
-    <textarea></textarea>
+<div class="task-add" style="margin-top:25px; display:flex; flex-direction:column; gap:10px; max-width:600px;">
 
-    <label>Polygon URL:</label>
-    <input type="text" />
+    <input @bind="NewTask.Name" type="text" placeholder="Название" /> @* поле названия *@
+    <textarea @bind="NewTask.Statement" placeholder="Условие"></textarea> @* многострочное условие *@
+    <textarea @bind="NewTask.SolutionIdea" placeholder="Идея решения"></textarea> @* идея решения *@
+    <input @bind="NewTask.PolygonUrl" type="text" placeholder="Polygon URL" /> @* ссылка на polygon *@
 
-    <label>Готова для Yandex Contest:</label>
-    <input type="checkbox" />
+    <div style="display:flex; gap:15px;">
+        <label><input type="checkbox" @bind="NewTask.IsCF" /> CF</label> @* флаг Codeforces *@
+        <label><input type="checkbox" @bind="NewTask.IsYandex" /> Yandex</label> @* флаг Yandex *@
+    </div>
 
-    <label>Сложность:</label>
-    <input type="number" min="1" max="10" />
-
-    <label>Примечания:</label>
-    <textarea></textarea>
+    <input type="number" @bind="NewTask.Difficulty" min="1" max="10" placeholder="Сложность" /> @* сложность 1-10 *@
+    <textarea @bind="NewTask.Notes" placeholder="Заметки"></textarea> @* примечание *@
 
     <label>Теги:</label>
-    <div>[теги позже]</div>
+    <div class="task-tags-list" style="display:flex; flex-wrap:wrap; gap:8px;">
+        @foreach (var t in Tags)
+        {
+            <label style="display:flex; align-items:center; gap:4px; font-size:var(--fs-table);">
+                <input type="checkbox"
+                       value="@t.IdTag"
+                       checked="@SelectedTags.Contains(t.IdTag)"
+                       @onchange="args => OnTagToggle(t.IdTag, (bool)args.Value)" /> @* чекбокс для тега *@
+                @t.Name
+            </label>
+        }
+    </div>
 
-    <label>Контесты:</label>
-    <div>[контесты позже]</div>
+    <label>Контексты:</label>
+    <div class="task-contexts-list" style="display:flex; flex-wrap:wrap; gap:8px;">
+        @foreach (var c in Contests)
+        {
+            <label style="display:flex; align-items:center; gap:4px; font-size:var(--fs-table);">
+                <input type="checkbox"
+                       value="@c.IdContest"
+                       checked="@SelectedContexts.Contains(c.IdContest)"
+                       @onchange="args => OnContextToggle(c.IdContest, (bool)args.Value)" />
+                @c.Name
+            </label>
+        }
+    </div>
 
-    <button>Сохранить</button>
-    <button>Отмена</button>
+    <button @onclick="Save">Сохранить</button>
+    <button @onclick="Cancel">Отмена</button>
 </div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; } // id из маршрута; 0 = новая задача
+
+    // ----- МОДЕЛИ -----
+
+    public class NewTaskModel
+    {
+        public string Name { get; set; } = "";          // название задачи
+        public string Statement { get; set; } = "";     // условие
+        public string SolutionIdea { get; set; } = "";  // идея решения
+        public string PolygonUrl { get; set; } = "";    // ссылка на polygon
+        public bool IsCF { get; set; }                  // подготовлена для CF
+        public bool IsYandex { get; set; }              // подготовлена для Yandex
+        public int Difficulty { get; set; }             // сложность 1-10
+        public string Notes { get; set; } = "";         // примечание
+        public int IdContext { get; set; }              // один основной контекст (если нужен)
+    }
+
+    public class TagRef
+    {
+        public int IdTag { get; set; }      // ID тега
+        public string Name { get; set; } = ""; // название тега
+    }
+
+    public class ContestRef
+    {
+        public int IdContest { get; set; }      // ID контеста
+        public string Name { get; set; } = "";  // название контеста
+    }
+
+    private NewTaskModel NewTask = new();           // текущая редактируемая задача
+    private List<TagRef> Tags = new();             // справочник тегов
+    private List<ContestRef> Contests = new();     // справочник контекстов
+    private HashSet<int> SelectedTags = new();     // выбранные теги (id_tag)
+    private HashSet<int> SelectedContexts = new(); // выбранные контексты (id_contest)
+
+    // ----- INIT -----
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Admin.IsAdmin)
+        {
+            // если надо, можно редиректить не-админа
+            Nav.NavigateTo("/tasks");
+            return;
+        }
+
+        await LoadRefsAsync();        // теги и контексты
+        if (Id > 0)
+            await LoadTaskAsync(Id);  // загрузка существующей задачи
+        // если Id == 0 — остаётся пустая форма для новой задачи
+    }
+
+    private async Task LoadRefsAsync()
+    {
+        using var conn = Db.GetConnection();   // подключение к БД
+        await conn.OpenAsync();                // открываем
+
+        // ----- TAGS -----
+        {
+            const string sql = "SELECT id_tag, name_tag FROM tags ORDER BY name_tag";
+            using var cmd = new NpgsqlCommand(sql, conn);   // команда на теги
+            using var r = await cmd.ExecuteReaderAsync();   // выполняем
+
+            Tags.Clear();                                   // очищаем список
+            while (await r.ReadAsync())                    // читаем строки
+            {
+                Tags.Add(new TagRef
+                {
+                    IdTag = r.GetInt32(0),                  // id_tag
+                    Name = r.GetString(1)                   // name_tag
+                });
+            }
+
+            r.Close();                                     // закрываем reader
+        }
+
+        // ----- CONTESTS -----
+        {
+            const string sql = "SELECT id_contest, name_contest FROM contests ORDER BY name_contest";
+            using var cmd = new NpgsqlCommand(sql, conn);   // команда на контесты
+            using var r = await cmd.ExecuteReaderAsync();   // выполняем
+
+            Contests.Clear();                               // очищаем список
+            while (await r.ReadAsync())                    // читаем строки
+            {
+                Contests.Add(new ContestRef
+                {
+                    IdContest = r.GetInt32(0),              // id_contest
+                    Name = r.GetString(1)                   // name_contest
+                });
+            }
+        }
+    }
+
+    private async Task LoadTaskAsync(int id)
+    {
+        using var conn = Db.GetConnection();  // подключение к БД
+        await conn.OpenAsync();               // открываем
+
+        // ----- ОСНОВНАЯ ЗАДАЧА -----
+        const string sqlTask = @"
+            SELECT
+                name,
+                statement,
+                solution_idea,
+                polygon_url,
+                is_prepared_for_codeforces,
+                is_prepared_for_yandex,
+                COALESCE(difficulty, 0),
+                notes,
+                COALESCE(id_context, 0)
+            FROM tasks
+            WHERE id_task = :id;
+        ";
+
+        using (var cmd = new NpgsqlCommand(sqlTask, conn)) // команда на задачу
+        {
+            cmd.Parameters.AddWithValue("id", id);         // параметр id
+
+            using var r = await cmd.ExecuteReaderAsync();  // выполняем
+
+            if (await r.ReadAsync())                      // если нашли
+            {
+                NewTask.Name = r.IsDBNull(0) ? "" : r.GetString(0);          // name
+                NewTask.Statement = r.IsDBNull(1) ? "" : r.GetString(1);     // statement
+                NewTask.SolutionIdea = r.IsDBNull(2) ? "" : r.GetString(2);  // solution_idea
+                NewTask.PolygonUrl = r.IsDBNull(3) ? "" : r.GetString(3);    // polygon_url
+                NewTask.IsCF = !r.IsDBNull(4) && r.GetBoolean(4);            // CF
+                NewTask.IsYandex = !r.IsDBNull(5) && r.GetBoolean(5);        // Yandex
+                NewTask.Difficulty = r.IsDBNull(6) ? 0 : r.GetInt32(6);      // difficulty
+                NewTask.Notes = r.IsDBNull(7) ? "" : r.GetString(7);         // notes
+                NewTask.IdContext = r.IsDBNull(8) ? 0 : r.GetInt32(8);       // id_context
+            }
+            else
+            {
+                // если не нашли — вернёмся к списку
+                Nav.NavigateTo("/tasks");
+                return;
+            }
+        }
+
+        // ----- ВЫБРАННЫЕ ТЕГИ -----
+        SelectedTags.Clear(); // очищаем список
+
+        const string sqlTags = "SELECT id_tag FROM task_tags WHERE id_task = :id";
+        using (var cmdTags = new NpgsqlCommand(sqlTags, conn)) // команда на связи тегов
+        {
+            cmdTags.Parameters.AddWithValue("id", id);          // id задачи
+
+            using var rt = await cmdTags.ExecuteReaderAsync(); // выполняем
+            while (await rt.ReadAsync())                       // читаем id_tag
+                SelectedTags.Add(rt.GetInt32(0));              // добавляем в набор
+        }
+
+        // ----- ВЫБРАННЫЕ КОНТЕКСТЫ -----
+        SelectedContexts.Clear(); // очищаем список
+
+        const string sqlCtx = "SELECT id_contest FROM task_contests WHERE id_task = :id";
+        using (var cmdCtx = new NpgsqlCommand(sqlCtx, conn)) // команда на связи контекстов
+        {
+            cmdCtx.Parameters.AddWithValue("id", id);          // id задачи
+
+            using var rc = await cmdCtx.ExecuteReaderAsync(); // выполняем
+            while (await rc.ReadAsync())                      // читаем id_contest
+                SelectedContexts.Add(rc.GetInt32(0));         // добавляем в набор
+        }
+    }
+
+    // ----- ОБРАБОТКА ЧЕКБОКСОВ -----
+
+    private void OnTagToggle(int tagId, bool isChecked)
+    {
+        if (isChecked)                // если включили чекбокс
+            SelectedTags.Add(tagId);  // добавляем тег
+        else
+            SelectedTags.Remove(tagId); // убираем тег
+    }
+
+    private void OnContextToggle(int ctxId, bool isChecked)
+    {
+        if (isChecked)                     // если включили чекбокс
+            SelectedContexts.Add(ctxId);   // добавляем контекст
+        else
+            SelectedContexts.Remove(ctxId); // убираем контекст
+    }
+
+    // ----- КНОПКИ -----
+
+    private async Task Save()
+    {
+        if (!Admin.IsAdmin)
+            return; // защита
+
+        using var conn = Db.GetConnection();  // подключение к БД
+        await conn.OpenAsync();               // открываем
+
+        int taskId;                           // id задачи для связей
+
+        if (Id == 0)
+        {
+            // ---------- СОЗДАНИЕ НОВОЙ ЗАДАЧИ ----------
+            const string insertSql = @"
+                INSERT INTO tasks
+                    (name, statement, solution_idea, polygon_url,
+                     is_prepared_for_codeforces, is_prepared_for_yandex,
+                     difficulty, notes, id_context)
+                VALUES
+                    (:n, :st, :si, :p, :cf, :ya, :d, :no, :ctx)
+                RETURNING id_task;
+            ";
+
+            using var cmd = new NpgsqlCommand(insertSql, conn);   // команда на вставку
+            cmd.Parameters.AddWithValue("n", NewTask.Name);       // name
+            cmd.Parameters.AddWithValue("st", NewTask.Statement); // statement
+            cmd.Parameters.AddWithValue("si", NewTask.SolutionIdea); // solution_idea
+            cmd.Parameters.AddWithValue("p", NewTask.PolygonUrl); // polygon_url
+            cmd.Parameters.AddWithValue("cf", NewTask.IsCF);      // CF
+            cmd.Parameters.AddWithValue("ya", NewTask.IsYandex);  // Yandex
+            cmd.Parameters.AddWithValue("d", NewTask.Difficulty); // difficulty
+            cmd.Parameters.AddWithValue("no", NewTask.Notes);     // notes
+            cmd.Parameters.AddWithValue("ctx",
+                NewTask.IdContext == 0 ? DBNull.Value : NewTask.IdContext); // id_context или NULL
+
+            taskId = Convert.ToInt32(await cmd.ExecuteScalarAsync()); // получаем новый id_task
+        }
+        else
+        {
+            // ---------- ОБНОВЛЕНИЕ СУЩЕСТВУЮЩЕЙ ЗАДАЧИ ----------
+            const string updateSql = @"
+                UPDATE tasks
+                SET
+                    name = :n,
+                    statement = :st,
+                    solution_idea = :si,
+                    polygon_url = :p,
+                    is_prepared_for_codeforces = :cf,
+                    is_prepared_for_yandex = :ya,
+                    difficulty = :d,
+                    notes = :no,
+                    id_context = :ctx
+                WHERE id_task = :id;
+            ";
+
+            using var cmd = new NpgsqlCommand(updateSql, conn);     // команда на обновление
+            cmd.Parameters.AddWithValue("n", NewTask.Name);         // name
+            cmd.Parameters.AddWithValue("st", NewTask.Statement);   // statement
+            cmd.Parameters.AddWithValue("si", NewTask.SolutionIdea);// solution_idea
+            cmd.Parameters.AddWithValue("p", NewTask.PolygonUrl);   // polygon_url
+            cmd.Parameters.AddWithValue("cf", NewTask.IsCF);        // CF
+            cmd.Parameters.AddWithValue("ya", NewTask.IsYandex);    // Yandex
+            cmd.Parameters.AddWithValue("d", NewTask.Difficulty);   // difficulty
+            cmd.Parameters.AddWithValue("no", NewTask.Notes);       // notes
+            cmd.Parameters.AddWithValue("ctx",
+                NewTask.IdContext == 0 ? DBNull.Value : NewTask.IdContext); // id_context или NULL
+            cmd.Parameters.AddWithValue("id", Id);                   // id_task
+
+            await cmd.ExecuteNonQueryAsync();                        // выполняем обновление
+            taskId = Id;                                             // для связей используем существующий id
+        }
+
+        // ---------- ПЕРЕЗАПИСЬ ТЕГОВ ----------
+        {
+            const string delSql = "DELETE FROM task_tags WHERE id_task = :t";
+            using (var delCmd = new NpgsqlCommand(delSql, conn))    // удаляем старые связи тегов
+            {
+                delCmd.Parameters.AddWithValue("t", taskId);        // id задачи
+                await delCmd.ExecuteNonQueryAsync();                // выполняем
+            }
+
+            const string insSql = "INSERT INTO task_tags (id_task, id_tag) VALUES (:t, :g)";
+            foreach (var tagId in SelectedTags)                     // по всем выбранным тегам
+            {
+                using var insCmd = new NpgsqlCommand(insSql, conn); // вставка связи tag
+                insCmd.Parameters.AddWithValue("t", taskId);        // id задачи
+                insCmd.Parameters.AddWithValue("g", tagId);         // id_tag
+                await insCmd.ExecuteNonQueryAsync();                // выполняем
+            }
+        }
+
+        // ---------- ПЕРЕЗАПИСЬ КОНТЕКСТОВ ----------
+        {
+            const string delSql = "DELETE FROM task_contests WHERE id_task = :t";
+            using (var delCmd = new NpgsqlCommand(delSql, conn))    // удаляем старые связи контекстов
+            {
+                delCmd.Parameters.AddWithValue("t", taskId);        // id задачи
+                await delCmd.ExecuteNonQueryAsync();                // выполняем
+            }
+
+            const string insSql = "INSERT INTO task_contests (id_task, id_contest) VALUES (:t, :c)";
+            foreach (var ctxId in SelectedContexts)                 // по всем выбранным контекстам
+            {
+                using var insCmd = new NpgsqlCommand(insSql, conn); // вставка связи contest
+                insCmd.Parameters.AddWithValue("t", taskId);        // id задачи
+                insCmd.Parameters.AddWithValue("c", ctxId);         // id_contest
+                await insCmd.ExecuteNonQueryAsync();                // выполняем
+            }
+        }
+
+        Nav.NavigateTo("/tasks"); // возвращаемся к списку после сохранения
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/tasks"); // просто возврат к списку
+    }
+}

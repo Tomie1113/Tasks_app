@@ -101,7 +101,7 @@ body {
 
 .content {
     width: 100%;
-    max-width: 1800px; /* ширина блока как у современных интерфейсов */
+    max-width: 1200px !important;
     margin-left: auto;
     margin-right: auto; /* центрирование */
     padding: 40px 30px; /* равномерные отступы */
@@ -231,6 +231,96 @@ body {
             background: rgba(255,255,255,0.1);
             color: #fff;
         }
+
+/* ============================================================
+   FILTER PANEL — FIXED CLEAN LAYOUT
+   ============================================================ */
+
+.filters-panel {
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--surface-border);
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+    margin-bottom: 26px;
+    max-width: 1200px !important; /* как таблица */
+    margin-left: auto; /* центрирование */
+    margin-right: auto; /* центрирование */
+}
+
+.filters-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px 24px;
+    align-items: end;
+    flex: 1; /* одинаковая ширина */
+}
+
+.filter-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 100%;
+
+}
+
+.filter-label {
+    font-size: 16px;
+    color: var(--grey-200);
+    font-weight: var(--fw-medium);
+
+}
+
+.filter-input {
+    height: 48px;
+    padding: 0 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    color: var(--grey-50);
+    font-size: 17px;
+    transition: 0.2s;
+    /* 🔒 Вот эти три строки — решают проблему */
+    max-width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    /* ВАЖНО: запрещаем input расширяться */
+    min-width: 0;
+    grid-column: 1 / -1; /* кнопки занимают всю строку grid */
+    width: 100%;
+}
+
+    .filter-input:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: var(--grey-200);
+    }
+
+.filter-buttons {
+    display: flex;
+    gap: 12px;
+    grid-column: 1 / -1; /* кнопки занимают всю строку grid */
+    width: 100%;
+}
+
+    .filter-buttons button {
+        height: 48px;
+        padding: 0 20px;
+        font-size: 17px;
+        border-radius: 10px;
+        flex: 1; /* одинаковая ширина */
+    }
+
+/* Ограничение ширины для фильтров "Название" и "Условие" */
+.filter-name,
+.filter-statement {
+    max-width: 260px; /* любая нужная тебе ширина */
+    width: 100%;
+}
+.filters-panel .filter-input {
+    width: auto !important;
+    max-width: 260px;
+}
+
 
 @media (max-width: 768px) {
     .desktop-only {
@@ -452,6 +542,13 @@ body {
         background: rgba(255,255,255,0.08);
         transition: 0.25s ease;
     }
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-bottom: 32px; /* ← вот этот отступ */
+}
+
 
 
 /* ============================================================
@@ -810,6 +907,16 @@ button {
    MOBILE ADAPTATION (≤ 768px)
    ============================================================ */
 @media (max-width: 768px) {
+    .nav-wrapper {
+        height: 64px;
+        padding: 12px 16px;
+    }
+
+    .nav-panel {
+        min-height: 52px;
+        padding: 0 18px;
+    }
+
     /* Усиливаем фон карточек на мобилке */
     .x-feature {
         background: rgba(255,255,255,0.12) !important;
@@ -954,7 +1061,6 @@ button {
             font-size: 20px;
         }
 }
-
 
 /* ============================================================
    SYSTEM
