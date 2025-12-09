@@ -1,17 +1,12 @@
 ﻿let comp2 = null;
 
 window.ContestsInterop = {
-    
-    // =====================
-    //   ПОЛУЧЕНИЕ ССЫЛКИ НА КОМПОНЕНТ
-    // =====================
+    //ссылка на компонент
     setComponent: function (instance) {
         comp2 = instance;
     },
-
-    // =====================
-    //   ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ
-    // =====================
+    
+    //подтверждение удаления
     confirmDelete: function (id) {
 
         const dialog = document.getElementById("contest-delete-dialog");
@@ -22,7 +17,6 @@ window.ContestsInterop = {
 
         const close = () => dialog.style.display = "none";
 
-        // удаляем старые обработчики, чтобы не повторялись
         yes.replaceWith(yes.cloneNode(true));
         no.replaceWith(no.cloneNode(true));
 
@@ -39,18 +33,16 @@ window.ContestsInterop = {
         });
     },
 
-    // =====================
-    //    ОБРАБОТКА СТРОК
-    // =====================
+    //обработка
     bindRowEvents: function (element, id) {
 
-        // ПКМ → диалог удаления
+        //пкм
         element.addEventListener("contextmenu", function (e) {
             e.preventDefault();
             window.ContestsInterop.confirmDelete(id);
         });
-
-        // Долгое нажатие для мобильных
+        
+        //для мобилы
         let pressTimer = null;
         element.addEventListener("touchstart", function () {
             pressTimer = setTimeout(() => {
@@ -59,12 +51,10 @@ window.ContestsInterop = {
         });
         element.addEventListener("touchend", () => clearTimeout(pressTimer));
 
-        // Двойной клик → редактирование
+        //редактирование
         element.addEventListener("dblclick", function () {
 
             comp2.invokeMethodAsync("StartEdit");
-
-            // Удаляем прошлый input
             const old = element.querySelector("input");
             if (old) old.remove();
 
@@ -124,11 +114,8 @@ window.ContestsInterop = {
 
         });
     },
-
-
-    // =====================
-    //   ПРИВЯЗКА К ID
-    // =====================
+    
+    //привязка к id
     bindRowEventsById: function (id) {
         const name = document.getElementById(`contest-name-${id}`);
         const year = document.getElementById(`contest-year-${id}`);

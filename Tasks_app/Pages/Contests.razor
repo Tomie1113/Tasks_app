@@ -19,6 +19,34 @@ else if (Contests_.Count == 0)
 }
 else
 {
+    <div class="filters-row">
+
+        <div class="filter-block">
+            <label class="filter-label">Поиск</label>
+            <input @bind="FilterName"
+                   type="text"
+                   placeholder="Название контеста"
+                   class="filter-input filter-name" />
+
+        </div>
+
+        <div class="filter-block">
+            <label class="filter-label">Сложность</label>
+            <select @bind="FilterYear" class="filter-input">
+                <option value="0">Любой год</option>
+                @foreach (var y in Years)
+                {
+                    <option value="@y">@y</option>
+                }
+            </select>
+        </div>
+        
+        <div class="filter-buttons">
+            <button @onclick="ApplyFilters" class="btn-primary">Фильтровать</button>
+            <button @onclick="ResetFilters" class="btn-secondary">Сбросить</button>
+        </div>
+
+    </div>
     <table class="x-table">
         <thead>
             <tr>
@@ -81,10 +109,14 @@ else
     private string nameInput;
     private int yearInput;
     private bool IsEditing = false;
+    private string FilterName = "";
+    private int FilterYear = 0;
     
     private List<ContestItem>? Contests_;
     private ElementReference selfRef;
     private DotNetObjectReference<Contests> selfObj;
+    
+    private List<int?> Years = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -119,6 +151,19 @@ else
                     YearContest = reader.IsDBNull(2) ? 0 : reader.GetInt32(2)
                 });
         }
+        
+        if (Contests_ != null)
+        {
+            foreach (var year in Contests_)
+            {
+                if (!Years.Contains(year.YearContest) && year.YearContest != 0)
+                {
+                    Years.Add(year.YearContest);
+                }
+            }
+
+            Years.Sort();
+        }
     }
 
     public class ContestItem
@@ -136,7 +181,6 @@ else
         }
         else
         {
-            //добавить инфу с поля ввода в бд
             using var conn = Db.GetConnection();
             await conn.OpenAsync();
 
@@ -160,10 +204,8 @@ else
 
             await cmd.ExecuteNonQueryAsync();
             //вывод сообщеения об успешном добавлении в бд
-
-            //обновить таблицу
+            
             await LoadContestsAsync();
-            //стересь из input
             nameInput = "";
             yearInput = 0;
         }
@@ -184,8 +226,33 @@ else
 
     }
     
-    // ---------- JS CALLBACKS -----------
+    private async Task ApplyFilters()
+    {
+        await LoadContestsAsync();
+        
+        if (!string.IsNullOrWhiteSpace(FilterName))
+        {
+            string f = FilterName.ToLower();
+            Contests_ = Contests_.Where(n =>
+                (n.NameContest?.ToLower().Contains(f) ?? false)).ToList();
+        }
+        
+        if (FilterYear != 0)
+        {
+            Contests_ = Contests_.Where(y => y.YearContest == FilterYear).ToList();
+        }
+        StateHasChanged();
+    }
 
+    private async Task ResetFilters()
+    {
+        FilterName = "";
+        FilterYear = 0;
+        await LoadContestsAsync();
+        StateHasChanged();
+    }
+    
+    //JS
     [JSInvokable]
     public void StartEdit()
     {
@@ -212,10 +279,8 @@ else
         if (Admin.IsAdmin)
             await LoadContestsAsync();
     }
-
-
-    // ---------- RENAME ----------
-
+    
+    //переименование
     public enum RenameContestType
     {
         Name,
@@ -267,13 +332,14 @@ else
         cmd.Parameters.AddWithValue("id", id);
         await cmd.ExecuteNonQueryAsync();
         
-        IsEditing = false;  // ← НОВАЯ СТРОКА
+        IsEditing = false;
 
         await LoadContestsAsync();
         await InvokeAsync(StateHasChanged);
 
     }
     
+    //удаление
     public async Task DeleteContest(int id)
     {
         try

@@ -4,12 +4,10 @@
 <div class="x-hero fade-in observe">
     <h1 class="x-hero-title">КонТест</h1>
     <p class="x-hero-sub">Платформа для создания, анализа и структурирования задач</p>
-    <!-- Decorative illustration for the hero section -->
     <img src="img/abstract-code.png" alt="Programming illustration" class="hero-illustration" />
 </div>
 
 <section class="x-section observe">
-    <!-- Gradient wrapper for the features section -->
     <div class="x-features-section observe">
         <h2 class="x-sec-title">Что делает КонТест удобным</h2>
 
@@ -77,9 +75,9 @@
 @code {
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender) // вызываем только один раз
+        if (firstRender)
         {
-            await JS.InvokeVoidAsync("initScrollObserver"); // дергаем JS-функцию
+            await JS.InvokeVoidAsync("initScrollObserver");
         }
     }
 }

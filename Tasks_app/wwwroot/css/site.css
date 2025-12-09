@@ -1,7 +1,4 @@
 ﻿
-/* ============================================================
-   DESIGN TOKENS (цвета, радиусы, отступы)
-   ============================================================ */
 :root {
     --grey-50: #e6e6e6;
     --grey-100: #cdcece;
@@ -29,19 +26,11 @@
     --ease-1: cubic-bezier(0.2, 0, 0.2, 1);
 }
 
-
-/* ============================================================
-   TYPOGRAPHY TOKENS — вся типографика в одном месте
-   ============================================================ */
-
-/* Families */
 :root {
     --font-main: 'Noto Sans', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 }
 
-
-/* Weights */
 :root {
     --fw-regular: 400;
     --fw-medium: 500;
@@ -51,24 +40,19 @@
     --fw-black: 900;
 }
 
-/* Sizes */
 :root {
-    --fs-display: 80px; /* Большой заголовок (HERO) */
-    --fs-h1: 48px; /* Главные разделы */
-    --fs-h2: 36px; /* Подзаголовки секций */
-    --fs-h3: 28px; /* Заголовки карточек */
-    --fs-nav: 24px; /* Навигация */
-    --fs-body: 20px; /* Основной текст */
-    --fs-sub: 22px; /* Подписи под заголовками */
-    --fs-button: 24px; /* Кнопки */
-    --fs-table: 18px; /* Табличный текст */
-    --fs-small: 15px; /* Маленький текст */
+    --fs-display: 80px; /* большой заголовок */
+    --fs-h1: 48px; /* главные разделы */
+    --fs-h2: 36px; /* подзаголовки*/
+    --fs-h3: 28px; /* заголовки для карточек */
+    --fs-nav: 24px; /* навигация */
+    --fs-body: 20px; /* основной текст */
+    --fs-sub: 22px; /* подписи под заголовками */
+    --fs-button: 24px; /* кнопки */
+    --fs-table: 18px; /* текст для таблиц */
+    --fs-small: 15px; /* маленький текст */
 }
 
-
-/* ============================================================
-   GLOBAL STYLES
-   ============================================================ */
 body {
     margin: 0;
     padding: 0;
@@ -94,29 +78,19 @@ body {
     }
 }
 
-
-/* ============================
-   MAIN PAGE CONTAINER — .content
-   ============================ */
-
 .content {
     width: 100%;
     max-width: 1200px !important;
     margin-left: auto;
-    margin-right: auto; /* центрирование */
-    padding: 40px 30px; /* равномерные отступы */
+    margin-right: auto;
+    padding: 40px 30px;
 
     display: flex;
     flex-direction: column;
-    gap: 40px; /* расстояние между секциями */
+    gap: 40px;
     box-sizing: border-box;
     padding-top: calc(72px + 32px);
 }
-
-
-/* ============================================================
-   NAVIGATION
-   ============================================================ */
 
 .nav-wrapper {
     position: fixed;
@@ -195,8 +169,7 @@ body {
             color: #fff;
         }
 
-
-/* ------------ MOBILE NAV ------------------ */
+        
 .desktop-only {
     display: flex;
     gap: 28px;
@@ -231,11 +204,7 @@ body {
             background: rgba(255,255,255,0.1);
             color: #fff;
         }
-
-/* ============================================================
-   FILTER PANEL — FIXED CLEAN LAYOUT
-   ============================================================ */
-
+        
 .filters-panel {
     padding: 16px 20px;
     background: rgba(255,255,255,0.04);
@@ -243,9 +212,9 @@ body {
     border-radius: 14px;
     backdrop-filter: blur(12px);
     margin-bottom: 26px;
-    max-width: 1200px !important; /* как таблица */
-    margin-left: auto; /* центрирование */
-    margin-right: auto; /* центрирование */
+    max-width: 1200px !important;
+    margin-left: auto; 
+    margin-right: auto;
 }
 
 .filters-row {
@@ -253,7 +222,7 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px 24px;
     align-items: end;
-    flex: 1; /* одинаковая ширина */
+    flex: 1;
 }
 
 .filter-block {
@@ -280,13 +249,11 @@ body {
     color: var(--grey-50);
     font-size: 17px;
     transition: 0.2s;
-    /* 🔒 Вот эти три строки — решают проблему */
     max-width: 100% !important;
     white-space: normal !important;
     overflow-wrap: break-word !important;
-    /* ВАЖНО: запрещаем input расширяться */
     min-width: 0;
-    grid-column: 1 / -1; /* кнопки занимают всю строку grid */
+    grid-column: 1 / -1;
     width: 100%;
 }
 
@@ -298,7 +265,7 @@ body {
 .filter-buttons {
     display: flex;
     gap: 12px;
-    grid-column: 1 / -1; /* кнопки занимают всю строку grid */
+    grid-column: 1 / -1;
     width: 100%;
 }
 
@@ -307,13 +274,12 @@ body {
         padding: 0 20px;
         font-size: 17px;
         border-radius: 10px;
-        flex: 1; /* одинаковая ширина */
+        flex: 1;
     }
-
-/* Ограничение ширины для фильтров "Название" и "Условие" */
+    
 .filter-name,
 .filter-statement {
-    max-width: 260px; /* любая нужная тебе ширина */
+    max-width: 260px;
     width: 100%;
 }
 .filters-panel .filter-input {
@@ -336,22 +302,13 @@ body {
     }
 }
 
-
-/* ============================================================
-   CONTENT LAYOUT
-   ============================================================ */
 .content {
     padding-top: calc(var(--spacing-5) + 58px);
     padding-left: 40px;
     padding-right: 40px;
 }
 
-
-/* ============================================================
-   HERO SECTION
-   ============================================================ */
 .x-hero {
-/*    padding: 30px 25px 60px;*/
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -377,16 +334,6 @@ body {
     width: 100%;
     max-width: 1200px;
     border-radius: 24px;
-}
-
-
-/* ============================================================
-   FEATURES SECTION
-   ============================================================ */
-.x-section {
-/*    max-width: 1200px;
-    margin: 0 auto;
-    padding: 30px 25px 60px;*/
 }
 
 .x-features-section {
@@ -416,7 +363,7 @@ body {
     border: 1px solid rgba(255,255,255,0.06);
     backdrop-filter: blur(14px);
     transition: 0.3s;
-    /* Анимация появления при скролле */
+    /* анимация при скролле */
     opacity: 0;
     transform: translateY(40px);
     transition: opacity 0.6s var(--ease-1), transform 0.6s var(--ease-1), background 0.3s var(--ease-1), box-shadow 0.3s var(--ease-1);
@@ -425,8 +372,7 @@ body {
         opacity: 1 !important;
         transform: translateY(0) !important;
     }
-
-    /* Наведение — тот самый эффект Raycast */
+    
     .x-feature:hover {
         background: rgba(255,255,255,0.08);
         transform: translateY(-6px);
@@ -443,11 +389,7 @@ body {
         font-size: var(--fs-body);
         color: var(--grey-150);
     }
-
-
-/* ============================================================
-   NAV BUTTON GRID
-   ============================================================ */
+    
 .x-nav-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
@@ -471,13 +413,12 @@ body {
     transition: opacity 0.6s var(--ease-1), transform 0.6s var(--ease-1), background 0.25s var(--ease-1), border-color 0.25s var(--ease-1), box-shadow 0.25s var(--ease-1);
 }
 
-    /* Появление при прокрутке */
+    /* прокрутка */
     .x-nav-btn.visible {
         opacity: 1 !important;
         transform: translateY(0) !important;
     }
-
-    /* hover — тот самый красивый эффект */
+    
     .x-nav-btn:hover {
         background: rgba(255,255,255,0.10);
         border-color: rgba(255,255,255,0.20);
@@ -496,10 +437,6 @@ body {
     color: var(--grey-300);
 }
 
-
-/* ============================================================
-   TABLES
-   ============================================================ */
 .x-table {
     width: 100%;
     border-collapse: separate;
@@ -511,7 +448,6 @@ body {
     overflow: hidden;
 }
 
-    /* Header */
     .x-table th {
         background: rgba(255,255,255,0.06);
         font-weight: var(--fw-bold);
@@ -521,8 +457,7 @@ body {
         color: var(--grey-50);
         border-bottom: 1px solid rgba(255,255,255,0.08);
     }
-
-    /* Cells */
+    
     .x-table td {
         padding: 14px 16px;
         font-size: var(--fs-table);
@@ -531,13 +466,11 @@ body {
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
-
-    /* Последняя строка без нижней линии */
+    
     .x-table tr:last-child td {
         border-bottom: none;
     }
 
-    /* Hover строки */
     .x-table tr:hover td {
         background: rgba(255,255,255,0.08);
         transition: 0.25s ease;
@@ -546,14 +479,9 @@ body {
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
-    margin-bottom: 32px; /* ← вот этот отступ */
+    margin-bottom: 32px;
 }
 
-
-
-/* ============================================================
-   FORMS & BUTTONS
-   ============================================================ */
 input,
 textarea,
 select {
@@ -591,10 +519,6 @@ button {
         transform: translateY(-2px);
     }
 
-
-/* ============================================================
-   LOGIN PAGE
-   ============================================================ */
 .login-page-container {
     display: flex;
     justify-content: center;
@@ -611,14 +535,12 @@ button {
     padding: 48px 40px;
     backdrop-filter: blur(14px);
     box-shadow: 0 15px 35px rgba(0,0,0,0.35);
-    /* ВАЖНО: выравниваем ВСЁ внутри по центру */
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px; /* равные отступы между всеми элементами */
+    gap: 20px;
 }
 
-    /* Заголовок */
     .login-form h2 {
         font-size: var(--fs-h2);
         font-weight: var(--fw-black);
@@ -627,29 +549,23 @@ button {
         width: 100%;
         margin: 0;
     }
-
-    /* Label */
+    
     .login-form label {
         font-size: var(--fs-body);
         font-weight: var(--fw-semibold);
         color: var(--grey-200);
-        /* Лейбл тоже центрируем */
         width: 100%;
         margin: 0;
     }
-
-    /* Input */
+    
     .login-form input {
         height: 64px;
         padding: 0 18px;
         line-height: 1;
         width: 100%;
         box-sizing: border-box;
-        /* Центровка текста (если потребуется) */
-
     }
-
-    /* Button */
+    
     .login-form button {
         height: 64px;
         width: 100%;
@@ -657,7 +573,6 @@ button {
         margin-top: 10px;
     }
 
-    /* Error message */
     .login-form p {
         width: 100%;
         text-align: center;
@@ -701,9 +616,9 @@ button {
     position: relative;
     height: 56px;
     padding: 0 18px;
-    background: rgba(255,255,255,0.05); /* как input */
+    background: rgba(255,255,255,0.05);
     border: 1px solid var(--surface-border);
-    backdrop-filter: blur(12px); /* как .tag-add input */
+    backdrop-filter: blur(12px);
     color: #fff;
     border-radius: var(--r-md);
     color: #fff;
@@ -713,7 +628,6 @@ button {
     cursor: pointer;
     user-select: none;
     font-size: var(--fs-body);
-
 }
 
 .x-select-arrow {
@@ -726,7 +640,7 @@ button {
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: rgba(255,255,255,0.06); /* как header таблицы */
+    background: rgba(255,255,255,0.06); 
     backdrop-filter: blur(12px);
     border: 1px solid var(--surface-border);
     border-radius: var(--r-md);
@@ -744,9 +658,6 @@ button {
     .x-select-item:hover {
         background: rgba(255,255,255,0.15);
     }
-/* ============================================================
-   TAG DELETE DIALOG — НАТИВНО В СТИЛЕ ВСЕГО UI
-   ============================================================ */
 
 #tag-delete-dialog {
     display: none;
@@ -764,7 +675,7 @@ button {
     display: flex;
 }
 
-/* Окно */
+/* окно */
 .tag-dialog-box {
     background: var(--surface);
     border: 1px solid var(--surface-border);
@@ -781,7 +692,6 @@ button {
     animation: fadeUpDialog 0.22s var(--ease-1);
 }
 
-/* Заголовок */
 .tag-dialog-title {
     font-size: var(--fs-h3);
     font-weight: var(--fw-bold);
@@ -789,19 +699,17 @@ button {
     margin-bottom: 22px;
 }
 
-/* Кнопки */
 .tag-dialog-buttons {
     display: flex;
     gap: 16px;
 }
 
-/* Кнопка УДАЛИТЬ — стиль «акцент в тёмной теме» */
 #tag-del-yes {
     flex: 1;
     padding: 14px 0;
     border-radius: var(--r-md);
-    background: linear-gradient(90deg, #7a3a3a, #8c2f2f); /* мягкий тёмно-красный */
-    border: 1px solid rgba(200, 80, 80, 0.25); /* серо-красная рамка */
+    background: linear-gradient(90deg, #7a3a3a, #8c2f2f);
+    border: 1px solid rgba(200, 80, 80, 0.25);
     color: var(--grey-50);
     font-size: var(--fs-table);
     font-weight: var(--fw-bold);
@@ -814,8 +722,7 @@ button {
         background: linear-gradient(90deg, #6d3232, #7a2929);
         border-color: rgba(200, 80, 80, 0.35);
     }
-
-/* Кнопка ОТМЕНА — в твоём стиле */
+    
 #tag-del-no {
     flex: 1;
     padding: 14px 0;
@@ -834,7 +741,7 @@ button {
         transform: translateY(-2px);
     }
 
-/* Анимация */
+/* анимация */
 @keyframes fadeUpDialog {
     from {
         opacity: 0;
@@ -845,9 +752,6 @@ button {
         transform: translateY(0) scale(1);
     }
 }
-/* ============================================================
-   CONTEST DELETE DIALOG — те же стили, просто другой ID
-   ============================================================ */
 
 #contest-delete-dialog {
     display: none;
@@ -863,9 +767,7 @@ button {
     #contest-delete-dialog.open {
         display: flex;
     }
-
-/* КНОПКИ — те же, что у тегов, только ID другие */
-
+    
 #contest-del-yes {
     flex: 1;
     padding: 14px 0;
@@ -903,9 +805,6 @@ button {
         transform: translateY(-2px);
     }
 
-/* ============================================================
-   MOBILE ADAPTATION (≤ 768px)
-   ============================================================ */
 @media (max-width: 768px) {
     .nav-wrapper {
         height: 64px;
@@ -916,27 +815,25 @@ button {
         min-height: 52px;
         padding: 0 18px;
     }
-
-    /* Усиливаем фон карточек на мобилке */
+    
     .x-feature {
         background: rgba(255,255,255,0.12) !important;
         border-color: rgba(255,255,255,0.18) !important;
         backdrop-filter: blur(18px);
     }
-
-        /* Ховер на мобилке ослабляем (или отключаем полностью) */
+    
         .x-feature:hover {
             background: rgba(255,255,255,0.16) !important;
-            transform: none; /* на телефоне прыжки смотрятся плохо */
+            transform: none;
             box-shadow: none;
         }
 
     .x-select,
     .x-select-list {
-        background: #1b1c1e !important; /* плотный фон */
+        background: #1b1c1e !important;
         border: 1px solid rgba(255,255,255,0.12) !important;
         width: 100%;
-        height: 70px; /* ← теперь работает */
+        height: 70px;
         font-size: 20px;
         padding: 12px 16px;
     }
@@ -944,13 +841,13 @@ button {
         box-sizing: border-box;
         padding-left: 20px;
         padding-right: 20px;
-        padding-bottom: 0; /* НЕ учитывается в размере */
+        padding-bottom: 0;
 
     }
     .x-select-list {
         box-sizing: border-box;
-        padding: 20px 20px 0 20px; /* слева/справа/сверху есть, снизу — 0 */
-        margin-bottom: 0; /* нет внешнего отступа */
+        padding: 20px 20px 0 20px;
+        margin-bottom: 0;
     }
     .tag-add {
         flex-direction: column;
@@ -964,12 +861,12 @@ button {
         .tag-add input,
         .tag-add button{
             width: 100%;
-            height: 70px; /* ← теперь работает */
+            height: 70px;
             font-size: 20px;
             padding: 12px 16px;
             box-sizing: border-box;
         }
-    /* Уменьшаем отступы по странице */
+
     .content {
         padding-left: 30px;
         padding-right: 30px;
@@ -989,9 +886,9 @@ button {
         padding: 0px 0px 0px;
 
     }
-    /* Hero */
+
     .x-hero-title {
-        font-size: 48px; /* было 80px */
+        font-size: 48px;
     }
 
     .x-hero-sub {
@@ -1001,8 +898,7 @@ button {
     .hero-illustration {
         border-radius: 12px;
     }
-
-    /* Секции */
+    
     .x-sec-title {
         font-size: 28px;
     }
@@ -1014,8 +910,7 @@ button {
     .x-feature p {
         font-size: 18px;
     }
-
-    /* Навигационные плитки */
+    
     .x-nav-btn {
         height: auto;
         padding: 20px;
@@ -1028,8 +923,7 @@ button {
     .x-nav-btn-sub {
         font-size: 18px;
     }
-
-    /* Формы */
+    
     input,
     textarea,
     select {
@@ -1041,8 +935,7 @@ button {
         font-size: 20px;
         padding: 12px 18px;
     }
-
-    /* Login */
+    
     .login-form {
         padding: 32px 24px;
     }
@@ -1062,9 +955,6 @@ button {
         }
 }
 
-/* ============================================================
-   SYSTEM
-   ============================================================ */
 #blazor-error-ui {
     display: none !important;
 }

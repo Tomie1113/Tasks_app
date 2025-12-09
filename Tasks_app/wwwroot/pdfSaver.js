@@ -23,10 +23,9 @@
         }
 
         try {
-            // диалог выбора папки
+            //выбор папки
             const dirHandle = await window.showDirectoryPicker();
-
-            // тест: можно ли писать в эту папку?
+            
             const perm = await dirHandle.queryPermission({ mode: "readwrite" });
 
             if (perm === "denied") {
@@ -41,12 +40,10 @@
                     return;
                 }
             }
-
-            // создаём файл
             const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
             const writable = await fileHandle.createWritable();
 
-            // конвертация base64 → Uint8Array
+            //конвертация
             const raw = atob(base64Data);
             const buffer = new Uint8Array(raw.length);
             for (let i = 0; i < raw.length; i++) buffer[i] = raw.charCodeAt(i);

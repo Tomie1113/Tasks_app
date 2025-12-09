@@ -2,16 +2,12 @@
 
 window.TagsInterop = {
 
-    // =====================
-    //   ПОЛУЧЕНИЕ ССЫЛКИ НА КОМПОНЕНТ
-    // =====================
+    //получение ссылки на компонент
     setComponent: function (instance) {
         comp = instance;
     },
 
-    // =====================
-    //   ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ
-    // =====================
+    //подтверждение удаления
     confirmDelete: function (id) {
 
         const dialog = document.getElementById("tag-delete-dialog");
@@ -22,7 +18,6 @@ window.TagsInterop = {
 
         const close = () => dialog.style.display = "none";
 
-        // удаляем старые обработчики, чтобы не повторялись
         yes.replaceWith(yes.cloneNode(true));
         no.replaceWith(no.cloneNode(true));
 
@@ -39,18 +34,15 @@ window.TagsInterop = {
         });
     },
 
-    // =====================
-    //    ОБРАБОТКА СТРОК
-    // =====================
+    //обработка строк
     bindRowEvents: function (element, id) {
 
-        // ПКМ → диалог удаления
+        //пкм
         element.addEventListener("contextmenu", function (e) {
             e.preventDefault();
             window.TagsInterop.confirmDelete(id);
         });
-
-        // Долгое нажатие → диалог удаления
+        
         let pressTimer = null;
         element.addEventListener("touchstart", function () {
             pressTimer = setTimeout(() => {
@@ -59,12 +51,11 @@ window.TagsInterop = {
         });
         element.addEventListener("touchend", () => clearTimeout(pressTimer));
 
-        // Двойной клик → редактирование
+        //редактирование
         element.addEventListener("dblclick", function () {
 
             comp.invokeMethodAsync("StartEdit");
-
-            // Удаляем прошлый input
+            
             const old = element.querySelector("input");
             if (old)
                 old.remove();
@@ -81,7 +72,7 @@ window.TagsInterop = {
 
             let renameSent = false;
 
-            // Enter
+            //Enter
             input.addEventListener("keydown", function (e) {
                 if (e.key === "Enter" && !renameSent) {
                     renameSent = true;
@@ -95,7 +86,7 @@ window.TagsInterop = {
                 }
             });
 
-            // Потеря фокуса
+            //потеря фокуса
             input.addEventListener("blur", function () {
 
                 if (!document.body.contains(input)) return;
@@ -112,9 +103,7 @@ window.TagsInterop = {
         });
     },
 
-    // =====================
-    //   ПРИВЯЗКА К ID
-    // =====================
+    //привязка к id
     bindRowEventsById: function (id) {
         const el = document.getElementById(`tag-${id}`);
         if (!el) return;
