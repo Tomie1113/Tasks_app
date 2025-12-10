@@ -214,8 +214,8 @@ body {
     max-width: 1200px !important;
     margin-left: auto;
     margin-right: auto;
-    position: relative; /* комбобокс будет привязан к панели */
-    z-index: 2; /* панель выше таблицы */
+    position: relative; 
+    z-index: 2; 
 }
 
 .filters-row {
@@ -318,10 +318,10 @@ body {
         opacity: 0.6;
     }
 
-/* Выпадающий список — ПОВЕРХ таблицы */
+
 .combo-dropdown {
-    position: absolute; /* привязан к .tags-filter */
-    top: calc(100% + 4px); /* сразу под кнопкой */
+    position: absolute; 
+    top: calc(100% + 4px); 
     left: 0;
     width: 100%;
     max-height: 220px;
@@ -331,15 +331,15 @@ body {
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 10px;
     box-shadow: 0 12px 28px rgba(0,0,0,0.8);
-    z-index: 10000; /* гарантированно выше таблицы */
+    z-index: 10000; 
     box-sizing: border-box;
 }
 
-/* Строка с чекбоксом – выровнена влево, на всю ширину */
+
 .combo-item {
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* выравнивание по левому краю */
+    justify-content: flex-start; 
     gap: 8px;
     padding: 4px;
     cursor: pointer;
@@ -351,7 +351,7 @@ body {
 }
 
     .combo-item span {
-        flex: 1; /* текст растягивается, но остаётся слева */
+        flex: 1; 
     }
 
     .combo-item:hover {
@@ -359,14 +359,14 @@ body {
         border-radius: 6px;
     }
 
-    /* Чекбокс */
+
     .combo-item input[type="checkbox"] {
         width: 16px;
         height: 16px;
         accent-color: var(--grey-200);
     }
 
-/* Кнопка "Готово" внизу списка */
+
 .close-drop {
     margin-top: 8px;
     width: 100%;
@@ -927,29 +927,29 @@ button {
         transform: translateY(-2px);
     }
 .task-add .combo-wrapper {
-    position: relative; /* якорь для дропдауна */
-    width: 100%; /* на всю ширину формы */
-    margin-bottom: 16px; /* небольшой отступ вниз */
-    box-sizing: border-box; /* чтобы padding не ломал ширину */
+    position: relative; 
+    width: 100%; 
+    margin-bottom: 16px;
+    box-sizing: border-box; 
 }
 .task-add .combo-dropdown {
-    position: absolute; /* привязан к .combo-wrapper */
-    top: calc(100% + 4px); /* прямо под "кнопкой" */
+    position: absolute; 
+    top: calc(100% + 4px); 
     left: 0;
-    width: 100%; /* такая же ширина, как у поля */
+    width: 100%; 
     box-sizing: border-box;
-    z-index: 10000; /* поверх всего содержимого формы */
+    z-index: 10000; 
 }
 
-/* Кнопка-комбобокс в форме задачи */
+
 .task-add .combo-multi {
-    font-size: 18px; /* здесь размер текста кнопки */
-    padding: 12px 16px; /* чуть повыше, чтобы не выглядело тесно */
+    font-size: 18px; 
+    padding: 12px 16px; 
 }
 
-/* Пункты внутри выпадающего списка */
+
 .task-add .combo-dropdown .combo-item span {
-    font-size: 18px; /* размер текста тегов/контекстов */
+    font-size: 18px; 
 }
 @keyframes fadeUpDialog {
     from {

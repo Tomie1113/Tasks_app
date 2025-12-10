@@ -24,28 +24,27 @@
 
             </div>
             <div class="filter-block tags-filter">
-                @* блок фильтра по тегам *@
+
                 <label class="filter-label">Теги (несколько)</label>
 
-                @* Кнопка-комбобокс *@
+  
                 <div class="combo-multi" @onclick="ToggleTags">
-                    @* открытие/закрытие списка *@
-                    <span>@GetSelectedTagsText()</span> @* текст: какие теги выбраны *@
-                    <span class="arrow">▼</span>        @* стрелочка справа *@
+       
+                    <span>@GetSelectedTagsText()</span> 
+                    <span class="arrow">▼</span>       
                 </div>
 
-                @* Выпадающий список с чекбоксами *@
                 @if (IsTagsOpen)
                 {
                     <div class="combo-dropdown">
-                        @* сам дропдаун поверх таблицы *@
+                       
                         @foreach (var t in Tags)
                         {
                             <label class="combo-item">
-                                @* пункт списка, выравниваем влево *@
+                              
                                 <input type="checkbox"
                                        checked="@SelectedTags.Contains(t.IdTag)"
-                                       @onchange="@(() => ToggleTag(t.IdTag))" /> @* только меняем флаг, не закрываем *@
+                                       @onchange="@(() => ToggleTag(t.IdTag))" /> 
                                 <span>@t.Name</span>
                             </label>
                         }
@@ -54,7 +53,7 @@
                                 class="close-drop"
                                 @onclick="CloseTags">
                             Готово
-                        </button> @* отдельная кнопка закрытия *@
+                        </button> 
                     </div>
                 }
             </div>
@@ -142,14 +141,16 @@
         </div>
     }
 
-    @if (IsAdmin)
-    {
-        <div class="filter-buttons">
 
+        <div class="filter-buttons">
+                @if (IsAdmin)
+            {
             <button @onclick="GoToCreateTask">Добавить задачу</button>
+             }
             <button @onclick="ExportTasksToPdf">Экспорт в PDF</button>
         </div>
-
+    @if (IsAdmin)
+    {
     <div id="task-delete-dialog"
          style="display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.45); backdrop-filter:blur(4px);
@@ -648,15 +649,15 @@ ORDER BY t.id_task;
                 }
             }
 
-            string sql = "DELETE FROM tasks WHERE id_task = :id"; // SQL на удаление строки
+            string sql = "DELETE FROM tasks WHERE id_task = :id";
 
-            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);  // создаём команду
-            cmd.Parameters.AddWithValue("id", id);                // подставляем параметр
+            using var cmd = new Npgsql.NpgsqlCommand(sql, conn);  
+            cmd.Parameters.AddWithValue("id", id);               
 
-            await cmd.ExecuteNonQueryAsync();                     // ВАЖНО: реально выполняем DELETE
+            await cmd.ExecuteNonQueryAsync();                     
 
-            await LoadTasksAsync();                               // обновляем список задач
-            await InvokeAsync(StateHasChanged);                   // перерисовываем компонент
+            await LoadTasksAsync();                               
+            await InvokeAsync(StateHasChanged);                  
 
         }
         catch (Exception ex)
